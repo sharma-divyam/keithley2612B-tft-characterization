@@ -14,16 +14,13 @@ import pyvisa
 # Connecting the instrument
 
 rm = pyvisa.ResourceManager()
-rm.list_resources()
-address = []
 
-if len(rm.list_resources()) == 0:
+address = rm.list_resources()
+
+if len(address) == 0:
     print ('No device connected')
     
-else:  
-    for item in rm.list_resources():
-        address.extend(item)
-        
+else:   
     print ('VISA address of the connected devices are:')
     
     for i in range(len(address)):
