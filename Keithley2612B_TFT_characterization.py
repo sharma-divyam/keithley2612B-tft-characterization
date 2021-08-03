@@ -7,8 +7,8 @@
 
 from keithley2600 import Keithley2600
 import numpy as np
-import os
 import pyvisa
+import csv
 
 
 def get_target_volt(start_volt):
@@ -20,7 +20,7 @@ def get_target_volt(start_volt):
     """
     while True:
         # Keeps asking the user for the valid target volt until they correclty provide one.
-        target_volt = float (input ('Set the target voltage (in Volts) for sweep:'))
+        target_volt = float (input ('Set the target voltage (in Volts) for sweep: '))
         
         if target_volt > start_volt:
             return target_volt
@@ -37,7 +37,7 @@ def get_step_volt(start_volt, target_volt):
     """
     while True:
 
-        step_volt = float (input ('Set the size of steps (in Volts) of sweep:')) 
+        step_volt = float (input ('Set the size of steps (in Volts) of sweep: ')) 
         
         if step_volt <= target_volt - start_volt:
             return step_volt
@@ -50,7 +50,7 @@ def get_integration_time ():
 
     """
     while True:
-        integration_time = float (input('Set the integration time for each data point (in PLC)'))
+        integration_time = float (input('Set the integration time for each data point (in PLC): '))
         if integration_time >= 0.001 and integration_time <= 25:
             return integration_time
         else: 
@@ -61,7 +61,7 @@ def get_sweep_type():
     Return boolean for sweep type based on the character input.
     """
     while True:
-        sweep_type = input ('Choose between pulsed and continuous sweep (enter P or C):')
+        sweep_type = input ('Choose between pulsed and continuous sweep (enter P or C): ')
         if sweep_type == 'P' or sweep_type == 'p':
             return True  
         elif sweep_type == 'C' or sweep_type == 'c':
@@ -89,11 +89,11 @@ else:
     
     while not is_valid_input:
 
-        get_address_existence = input ('Is the VISA address of the SMU listed? (Y/N)').lower()
+        get_address_existence = input ('Is the VISA address of the SMU listed? (Y/N): ').lower()
 
         if get_address_existence == 'y':
             is_valid_input = True
-            smu_index = input('Enter the index number of the SMU:')
+            smu_index = int(input('Enter the index number of the SMU: '))
             k = Keithley2600(address[smu_index])
             is_connected = True
             print ('Connected successfully!', '/n')
@@ -104,7 +104,7 @@ else:
 
             # Source voltage from Channel A
 
-            start_volt = float (input ('Set the starting voltage (in Volts) for sweep:'))
+            start_volt = float (input ('Set the starting voltage (in Volts) for sweep: '))
 
             target_volt = get_target_volt(start_volt)
             
@@ -117,12 +117,22 @@ else:
             
             integration_time = get_integration_time()
 
-            delay_time = float (input('Set settling delay (in seconds) before each measurement: (NOTE: Setting the value to -1 automatically starts taking measurement as soon as current in stable)'))
+            delay_time = float (input('Set settling delay (in seconds) before each measurement: (NOTE: Setting the value to -1 automatically starts taking measurement as soon as current in stable) '))
 
             pulsed = get_sweep_type()
 
             # VI measurement
             vi_output = k.voltage_sweep_single_smu (k.smua, sweep_volt, integration_time, delay_time, pulsed)
+
+            # Data acquisition
+            vi_output_transpose = np.transpose(vi_output)
+            file_path = str (input('Give file path and file name (with .csv extension) to record the data: '))
+            headers = ['Voltage (in Volt)', 'Current (in Ampere)']
+
+            with open(file_path, 'w+') as csv_file:
+                write = csv.writer(csv_file)
+                write.writerow(headers)
+                write.writerows(vi_output_transpose)
 
         
         elif get_address_existence == 'n': 
@@ -132,3 +142,6 @@ else:
 
         else: 
             print ('INVALID INPUT')
+
+        
+
