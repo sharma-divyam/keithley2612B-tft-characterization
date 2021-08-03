@@ -1,4 +1,4 @@
-# Keithley 2612B SMU TFT Characterization
+# Keithley 2612B SMU Solar and TFT Characterization
 Python script for analyzing readings from Keithley 2612B for TFT output and transfer characteristics
 
 ## Setup Instructions
