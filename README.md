@@ -4,7 +4,7 @@ Python script for analyzing readings from Keithley 2612B for TFT output and tran
 ## Setup Instructions
 1. Clone the project.
    ```sh
-   git clone https://github.com/sharma-divyam/keithley2612B-tft-characterization.git
+   git clone https://github.com/sharma-divyam/keithley2612B-solar-and-TFT-characterization.git
    ```
 2. Install the dependencies required in the project.
    ```sh
@@ -12,5 +12,5 @@ Python script for analyzing readings from Keithley 2612B for TFT output and tran
    ```
 3. Run the script.
    ```sh
-    python .\Kiethley2612B_TFT_characterization.py
+    python .\Kiethley2612B_voltage_sweep.py
    ```
