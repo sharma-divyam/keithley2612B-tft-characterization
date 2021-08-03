@@ -12,5 +12,5 @@ Python script for analyzing readings from Keithley 2612B for TFT output and tran
    ```
 3. Run the script.
    ```sh
-    python .\Kiethley2612B_voltage_sweep.py
+    python .\Keithley2612B_voltage_sweep.py
    ```
