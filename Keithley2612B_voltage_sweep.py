@@ -9,6 +9,7 @@ from keithley2600 import Keithley2600
 import numpy as np
 import pyvisa
 import csv
+from datetime import datetime
 
 
 def get_target_volt(start_volt):
@@ -117,22 +118,28 @@ else:
             
             integration_time = get_integration_time()
 
-            delay_time = float (input('Set settling delay (in seconds) before each measurement: (NOTE: Setting the value to -1 automatically starts taking measurement as soon as current in stable) '))
+            delay_time = float (input('Set settling delay (in seconds) before each measurement: (NOTE: Setting the value to -1 automatically starts taking measurement as soon as current is stable) '))
 
             pulsed = get_sweep_type()
 
             # VI measurement
+            print ('Voltage sweep being conducted...')
             vi_output = k.voltage_sweep_single_smu (k.smua, sweep_volt, integration_time, delay_time, pulsed)
+            test_datetime = datetime.now()
+            print (f"Sweep successfully completed at {test_datetime}.")
 
             # Data acquisition
+            title = str (input('Give a title for the test conducted: '))
             vi_output_transpose = np.transpose(vi_output)
             file_path = str (input('Give file path and file name (with .csv extension) to record the data: '))
             headers = ['Voltage (in Volt)', 'Current (in Ampere)']
 
             with open(file_path, 'w+') as csv_file:
                 write = csv.writer(csv_file)
+                write.writerow(title)
                 write.writerow(headers)
                 write.writerows(vi_output_transpose)
+                write.writerow(f"Date and Time of measurement: {test_datetime}")
 
         
         elif get_address_existence == 'n': 
