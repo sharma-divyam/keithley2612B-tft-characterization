@@ -70,6 +70,54 @@ def get_sweep_type():
         else:
             print ('INVALID INPUT')
 
+def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end):
+
+    v_measured, i_measured, timestamps = [], [], []
+    
+    smu_id.trigger.count = steps_no
+
+    smu_id.measure.delay = measure_delay
+    smu_id.measure.nplc = nplc
+    
+    smu_id.source.func = smu_id.OUTPUT_DCVOLTS
+
+    smu_id.nvbuffer1.clear()
+    smu_id.nvbuffer2.clear()
+    smu_id.nvbuffer1.clearcache()
+    smu_id.nvbuffer2.clearcache()
+
+    smu_id.nvbuffer2.collecttimestamps = 1
+
+    smu_id.trigger.measure.iv(smu_id.nvbuffer1, smu_id.nvbuffer2)
+
+    smu_id.trigger.source.linearv (start, end, steps_no)
+
+    smu_id.trigger.source.action = smu.ENABLE
+    smu.trigger.measure.action = smu.ENABLE
+
+    smu_id.source.output = smu_id.OUTPUT_ON
+    smu_id.trigger.initiate()
+
+    v_measured = smu_id.nvbuffer2.readings
+    i_measured = smu_id.nvbuffer1.readings
+    timestamps = smu_id.nvbuffer2.timestamps
+
+    output = [v_measured, i_measured, timestamps]
+
+    smu_id.nvbuffer1.clear()
+    smu_id.nvbuffer2.clear()
+    smu_id.nvbuffer1.clearcache()
+    smu_id.nvbuffer2.clearcache()
+
+    return output
+    """
+    output index -> stored parameter
+    0 -> voltage in Volt 
+    1 -> current in Ampere
+    2 -> timestamps (not sure of the format)
+    
+    """
+
 
 # Connecting the instrument
 
@@ -96,6 +144,7 @@ else:
             is_valid_input = True
             smu_index = int(input('Enter the index number of the SMU: '))
             k = Keithley2600(address[smu_index])
+            smu = rm.open_resource(address[smu_index])
             is_connected = True
             print ('Connected successfully!', '/n')
 
@@ -109,37 +158,55 @@ else:
 
             target_volt = get_target_volt(start_volt)
             
+            steps_num = int (input ('Enter the number of steps'))
+            """
             step_volt = get_step_volt(start_volt, target_volt)
 
             if (target_volt - start_volt) % step_volt == 0:
                 sweep_volt = np.arange (start_volt, target_volt + step_volt, step_volt)
             else:
                 sweep_volt = np.arange (start_volt, target_volt, step_volt)
-            
+            """
             integration_time = get_integration_time()
+            
 
-            delay_time = float (input('Set settling delay (in seconds) before each measurement: (NOTE: Setting the value to -1 automatically starts taking measurement as soon as current is stable) '))
+            measure_delay = float (input('Set settling delay (in seconds) before each measurement: (NOTE: Setting the value to -1 automatically starts taking measurement as soon as current is stable) '))
 
-            pulsed = get_sweep_type()
+            #pulsed = get_sweep_type()
 
+            
             # VI measurement
             print ('Voltage sweep being conducted...')
-            vi_output = k.voltage_sweep_single_smu (k.smua, sweep_volt, integration_time, delay_time, pulsed)
-            test_datetime = datetime.now()
-            print (f"Sweep successfully completed at {test_datetime}.")
+            test_output = sweep_operation (smu, steps_num, measure_delay, integration_time, start_volt, target_volt) 
+            end_time = datetime.now()
+            print (f"Sweep successfully completed on {end_time}.")
+
+            # scan rate 
+            # (Unsure of the data type of measured voltage and timestamps. This will only work if both are float or int)   
+    
+            del_t = []
+            for i in len(test_output[2]):
+                del_t [i] = test_output [2,i] - test_output [2,0]
+
+            scan_rate = np.polyfit(del_t, test_output[0], 1)[0]
+
+            print (f"The scan rate of the sweep operation was {scan_rate} V/s")
+
+              
 
             # Data acquisition
+            vi_output = [test_output[0], test_output[1]]
             title = str (input('Give a title for the test conducted: '))
             vi_output_transpose = np.transpose(vi_output)
             file_path = str (input('Give file path and file name (with .csv extension) to record the data: '))
-            headers = ['Voltage (in Volt)', 'Current (in Ampere)']
+            headers = ['Voltage (in Volt)', 'Current (in Ampere)', 'Timestamp']
 
             with open(file_path, 'w+') as csv_file:
                 write = csv.writer(csv_file)
                 write.writerow(title)
                 write.writerow(headers)
                 write.writerows(vi_output_transpose)
-                write.writerow(f"Date and Time of measurement: {test_datetime}")
+                write.writerow(f"Date and Time of measurement: {end_time }")
 
         
         elif get_address_existence == 'n': 
