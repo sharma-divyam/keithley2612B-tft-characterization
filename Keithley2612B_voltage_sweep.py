@@ -186,7 +186,7 @@ else:
     
             del_t = []
             for i in len(test_output[2]):
-                del_t [i] = test_output [2,i] - test_output [2,0]
+                del_t [i] = test_output [2][i] - test_output [2][0]
 
             scan_rate = np.polyfit(del_t, test_output[0], 1)[0]
 
