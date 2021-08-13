@@ -74,40 +74,41 @@ def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end):
 
     v_measured, i_measured, timestamps = [], [], []
     
-    smu_id.trigger.count = steps_no
-
-    smu_id.measure.delay = measure_delay
-    smu_id.measure.nplc = nplc
+    smu_id.write (f"smu_id.trigger.count = {steps_no}")
     
-    smu_id.source.func = smu_id.OUTPUT_DCVOLTS
 
-    smu_id.nvbuffer1.clear()
-    smu_id.nvbuffer2.clear()
-    smu_id.nvbuffer1.clearcache()
-    smu_id.nvbuffer2.clearcache()
+    smu_id.write (f"smu_id.measure.delay = {measure_delay}")
+    smu_id.write (f"smu_id.measure.nplc = {nplc}")
+    
+    smu_id.write ("smu_id.source.func = smu_id.OUTPUT_DCVOLTS")
 
-    smu_id.nvbuffer2.collecttimestamps = 1
+    smu_id.write ("smu_id.nvbuffer1.clear()")
+    smu_id.write ("smu_id.nvbuffer2.clear()")
+    smu_id.write ("smu_id.nvbuffer1.clearcache()")
+    smu_id.write ("smu_id.nvbuffer2.clearcache()")
 
-    smu_id.trigger.measure.iv(smu_id.nvbuffer1, smu_id.nvbuffer2)
+    smu_id.write ("smu_id.nvbuffer2.collecttimestamps = 1")
 
-    smu_id.trigger.source.linearv (start, end, steps_no)
+    smu_id.write ("smu_id.trigger.measure.iv(smu_id.nvbuffer1, smu_id.nvbuffer2)")
 
-    smu_id.trigger.source.action = smu.ENABLE
-    smu.trigger.measure.action = smu.ENABLE
+    smu_id.write (f"smu_id.trigger.source.linearv ({start}, {end}, {steps_no})")
 
-    smu_id.source.output = smu_id.OUTPUT_ON
-    smu_id.trigger.initiate()
+    smu_id.write ("smu_id.trigger.source.action = smu.ENABLE")
+    smu_id.write ("smu.trigger.measure.action = smu.ENABLE")
 
-    v_measured = smu_id.nvbuffer2.readings
-    i_measured = smu_id.nvbuffer1.readings
-    timestamps = smu_id.nvbuffer2.timestamps
+    smu_id.write ("smu_id.source.output = smu_id.OUTPUT_ON")
+    smu_id.write ("smu_id.trigger.initiate()")
+
+    v_measured = smu_id.write ("smu_id.nvbuffer2.readings")
+    i_measured = smu_id.write ("smu_id.nvbuffer1.readings")
+    timestamps = smu_id.write ("smu_id.nvbuffer2.timestamps")
 
     output = [v_measured, i_measured, timestamps]
 
-    smu_id.nvbuffer1.clear()
-    smu_id.nvbuffer2.clear()
-    smu_id.nvbuffer1.clearcache()
-    smu_id.nvbuffer2.clearcache()
+    smu_id.write ("smu_id.nvbuffer1.clear()")
+    smu_id.write ("smu_id.nvbuffer2.clear()")
+    smu_id.write ("smu_id.nvbuffer1.clearcache()")
+    smu_id.write ("smu_id.nvbuffer2.clearcache()")
 
     return output
     """
@@ -146,9 +147,9 @@ else:
             k = Keithley2600(address[smu_index])
             smu = rm.open_resource(address[smu_index])
             is_connected = True
-            print ('Connected successfully!', '/n')
+            print ('Connected successfully!')
 
-            print ('VOLTAGE SWEEP PARAMETERS:', '/n')
+            print ('VOLTAGE SWEEP PARAMETERS:')
 
             # Voltage sweep parameters
 
@@ -159,17 +160,9 @@ else:
             target_volt = get_target_volt(start_volt)
             
             steps_num = int (input ('Enter the number of steps'))
-            """
-            step_volt = get_step_volt(start_volt, target_volt)
 
-            if (target_volt - start_volt) % step_volt == 0:
-                sweep_volt = np.arange (start_volt, target_volt + step_volt, step_volt)
-            else:
-                sweep_volt = np.arange (start_volt, target_volt, step_volt)
-            """
             integration_time = get_integration_time()
             
-
             measure_delay = float (input('Set settling delay (in seconds) before each measurement: (NOTE: Setting the value to -1 automatically starts taking measurement as soon as current is stable) '))
 
             #pulsed = get_sweep_type()
