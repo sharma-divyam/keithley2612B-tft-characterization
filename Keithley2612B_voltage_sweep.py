@@ -11,6 +11,11 @@ import pyvisa
 import csv
 from datetime import datetime
 
+def get_resources():
+    rm = pyvisa.ResourceManager()
+    address = rm.list_resources()
+    resources = (rm, address)
+    return resources
 
 def get_target_volt(start_volt):
     """
@@ -122,17 +127,17 @@ def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end):
 
 # Connecting the instrument
 
-rm = pyvisa.ResourceManager()
-address = rm.list_resources()
+rm = get_resources()[0]
+address_list = get_resources()[1]
 
-if len(address) == 0:
+if len(address_list) == 0:
     print ('No device connected')
     
 else:
     print ('VISA address of the connected devices are:')
     
-    for i in range(len(address)):
-        print (f"{i}: {address[i]}")
+    for i in range(len(address_list)):
+        print (f"{i}: {address_list[i]}")
     
     
     is_valid_input = False
@@ -144,8 +149,8 @@ else:
         if get_address_existence == 'y':
             is_valid_input = True
             smu_index = int(input('Enter the index number of the SMU: '))
-            k = Keithley2600(address[smu_index])
-            smu = rm.open_resource(address[smu_index])
+            k = Keithley2600(address_list[smu_index])
+            smu = rm.open_resource(address_list[smu_index])
             is_connected = True
             print ('Connected successfully!')
 
