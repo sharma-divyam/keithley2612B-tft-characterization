@@ -183,7 +183,7 @@ else:
             # (Unsure of the data type of measured voltage and timestamps. This will only work if both are float or int)   
     
             del_t = []
-            for i in len(test_output[2]):
+            for i in range(len(test_output[2])):
                 del_t [i] = test_output [2][i] - test_output [2][0]
 
             scan_rate = np.polyfit(del_t, test_output[0], 1)[0]
