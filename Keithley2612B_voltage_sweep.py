@@ -20,26 +20,24 @@ def get_resources():
 def get_target_volt(start_volt):
     """
     Return the target volt. Check validity of the input.
-
     :param start_volt: The starting point of the voltage sweep. 
-
     """
     while True:
         # Keeps asking the user for the valid target volt until they correclty provide one.
         target_volt = float (input ('Set the target voltage (in Volts) for sweep: '))
-        
+        """
         if target_volt > start_volt:
             return target_volt
         else: 
             print ('INVALID INPUT: Target voltage must be greater than starting voltage.')
-
+        """
+        return target_volt
+        
 def get_step_volt(start_volt, target_volt):
     """
     Return the step volt. It is the magnitude of steps in which the sweep will occur. Check validity of the input.
-
     :param start_volt: The starting point of the voltage sweep. 
     :param target_volt: The end point of the voltage sweep. 
-
     """
     while True:
 
@@ -53,7 +51,6 @@ def get_step_volt(start_volt, target_volt):
 def get_integration_time ():
     """
     Return integration time. Check if input is within the range suggested by Keithley2600 manual.
-
     """
     while True:
         integration_time = float (input('Set the integration time for each data point (in PLC): '))
@@ -75,45 +72,119 @@ def get_sweep_type():
         else:
             print ('INVALID INPUT')
 
-def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end):
+def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end, scan_rate):
 
-    v_measured, i_measured, timestamps = [], [], []
+    smu_id.timeout = 300000
     
-    smu_id.write (f"smu_id.trigger.count = {steps_no}")
+    smu_id.write("errorqueue.clear()")
+
+    print("Scan rate is: " + str(scan_rate))
+    # Set source function to DC volts
+    smu_id.write ("smua.source.func = smua.OUTPUT_DCVOLTS")
+  
+    if start > end:
+        max = start
+        min = end
+    else:
+        max = end
+        min = start
+    
+    # calculate time per voltage
+    scan_interval_time = (((max *1.0000000000 - min * 1.0000000000)/(steps_no - 1)) / (scan_rate/1000))
+    
+    # Subtract NPLC delay
+    scan_interval_time = scan_interval_time - (nplc/50)
+    #log.info("Wait time for voltage = %f" % scan_interval_time)
+    
+    print("Interval time is: " + str(scan_interval_time))
+    
+    # Set source delay 
+    smu_id.write("smua.source.delay = %f" % scan_interval_time)   
+
+    #smu_id.write (f"smua.measure.nplc = {nplc}")
+    
+    
+    # Set current compliance. From my code. This is necessary for measuring our devices. 
+    smu_id.write("smua.source.limiti = 30e-3")
+    
+    
+    # Clear the buffers for storage
+    smu_id.write ("smua.nvbuffer1.clear()")
+    smu_id.write ("smua.nvbuffer2.clear()")
+    smu_id.write ("smua.nvbuffer1.clearcache()")
+    smu_id.write ("smua.nvbuffer2.clearcache()")
+    
+    # Configure timestamp collection option. I changed it to buffer1
+    smu_id.write ("smua.nvbuffer1.collecttimestamps = 1")
+
+    # We need to include a sweep direction option. 
+    # Set the sweep parameters
+    smu_id.write (f"smua.trigger.source.linearv ({start}, {end}, {steps_no})")
+    smu_id.write("smua.trigger.measure.action = smua.ENABLE")  # ENABLE the sweep
+
+
+    # Set to measure current, and collect both current and voltage
+    smu_id.write ("smua.trigger.measure.iv(smua.nvbuffer1, smua.nvbuffer2)")
+    smu_id.write ("smua.trigger.source.action = smua.ENABLE")
+
+
+    # Set trigger count
+    smu_id.write (f"smua.trigger.count = {steps_no}")
+
+    # Turn on output and run
+    smu_id.write ("smua.source.output = smua.OUTPUT_ON")
+    smu_id.write ("smua.trigger.initiate()")
+   
+    
+    # To check if the sweep is complete. This is necessary. Otherwise python continues executing the rest of the code,
+    # while the Keithley is still measuring. We can technically add just a sleep, but I don't fancy using a hardcoded sleep.
+    # Users won't want to include the time it should sleep too. Therefore it must be automatic.
+    smu_id.write("*OPC?")
+    id = smu_id.read()
+    print("Initial OPC ID = " + str(id))
     
 
-    smu_id.write (f"smu_id.measure.delay = {measure_delay}")
-    smu_id.write (f"smu_id.measure.nplc = {nplc}")
+    while int(id) != 1:
+        smu_id.write("*OPC?")
+        id = smu_id.read()
+        sleep(1)
+        print("Current ID = " + str(id))
+        
+    # Turn output off. We should do this. Otherwise the Keithley holds it at the voltage it stops at.
+    # This will affect the measurement of our devices. We cannot leave it under bias for too long due to ionic migration.
+    smu_id.write("smua.source.output = smua.OUTPUT_OFF")
     
-    smu_id.write ("smu_id.source.func = smu_id.OUTPUT_DCVOLTS")
+    ###### GET OUTPUT (TYPE IS STRING) THEN CONVERT TO FLOAT NUMPY ARRAY
+    
+    # Get the currents
+    smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.readings)")
+    current_string = smu_id.read()
 
-    smu_id.write ("smu_id.nvbuffer1.clear()")
-    smu_id.write ("smu_id.nvbuffer2.clear()")
-    smu_id.write ("smu_id.nvbuffer1.clearcache()")
-    smu_id.write ("smu_id.nvbuffer2.clearcache()")
+    
+    # Get the voltages
+    smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer2.readings)")
+    voltage_string = smu_id.read()
 
-    smu_id.write ("smu_id.nvbuffer2.collecttimestamps = 1")
+    
+    # Get the timestamps
+    smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.timestamps)")
+    timestamp_string = smu_id.read()
+    
+    current_string_array = current_string.split(',')
+    voltage_string_array = voltage_string.split(',')
+    timestamp_string_array = timestamp_string.split(',')
+    
+    currents = np.array(current_string_array, dtype=float)
+    voltages = np.array(voltage_string_array, dtype=float)
+    timestamps = np.array(timestamp_string_array, dtype=float)
 
-    smu_id.write ("smu_id.trigger.measure.iv(smu_id.nvbuffer1, smu_id.nvbuffer2)")
+    output = [voltages, currents, timestamps]
 
-    smu_id.write (f"smu_id.trigger.source.linearv ({start}, {end}, {steps_no})")
-
-    smu_id.write ("smu_id.trigger.source.action = smu.ENABLE")
-    smu_id.write ("smu.trigger.measure.action = smu.ENABLE")
-
-    smu_id.write ("smu_id.source.output = smu_id.OUTPUT_ON")
-    smu_id.write ("smu_id.trigger.initiate()")
-
-    v_measured = smu_id.write ("smu_id.nvbuffer2.readings")
-    i_measured = smu_id.write ("smu_id.nvbuffer1.readings")
-    timestamps = smu_id.write ("smu_id.nvbuffer2.timestamps")
-
-    output = [v_measured, i_measured, timestamps]
-
-    smu_id.write ("smu_id.nvbuffer1.clear()")
-    smu_id.write ("smu_id.nvbuffer2.clear()")
-    smu_id.write ("smu_id.nvbuffer1.clearcache()")
-    smu_id.write ("smu_id.nvbuffer2.clearcache()")
+    smu_id.write ("smua.nvbuffer1.clear()")
+    smu_id.write ("smua.nvbuffer2.clear()")
+    smu_id.write ("smua.nvbuffer1.clearcache()")
+    smu_id.write ("smua.nvbuffer2.clearcache()")
+    
 
     return output
     """
@@ -149,7 +220,7 @@ else:
         if get_address_existence == 'y':
             is_valid_input = True
             smu_index = int(input('Enter the index number of the SMU: '))
-            k = Keithley2600(address_list[smu_index])
+            #k = Keithley2600(address_list[smu_index])
             smu = rm.open_resource(address_list[smu_index])
             is_connected = True
             print ('Connected successfully!')
@@ -164,36 +235,41 @@ else:
 
             target_volt = get_target_volt(start_volt)
             
-            steps_num = int (input ('Enter the number of steps'))
+            steps_num = int (input ('Enter the number of steps: '))
 
             integration_time = get_integration_time()
             
-            measure_delay = float (input('Set settling delay (in seconds) before each measurement: (NOTE: Setting the value to -1 automatically starts taking measurement as soon as current is stable) '))
+            measure_delay = 0
 
             #pulsed = get_sweep_type()
 
+            scan_rate = float(input ('Enter scan rate in mV/s: '))
             
             # VI measurement
             print ('Voltage sweep being conducted...')
-            test_output = sweep_operation (smu, steps_num, measure_delay, integration_time, start_volt, target_volt) 
+            test_output = sweep_operation (smu, steps_num, measure_delay, integration_time, start_volt, target_volt, scan_rate) 
             end_time = datetime.now()
             print (f"Sweep successfully completed on {end_time}.")
 
             # scan rate 
             # (Unsure of the data type of measured voltage and timestamps. This will only work if both are float or int)   
     
-            del_t = []
+            del_t = np.empty((1,steps_num))
+            print("The test_output value is: " + str(test_output[0]))
+            print("The length is: " + str(len(test_output[2])))
             for i in range(len(test_output[2])):
-                del_t [i] = test_output [2][i] - test_output [2][0]
+                del_t[0][i] = test_output[2][i] - test_output[2][0]
 
-            scan_rate = np.polyfit(del_t, test_output[0], 1)[0]
+            print("del t = " + str(del_t))
+
+            scan_rate = np.polyfit(del_t[0], test_output[0], 1)
 
             print (f"The scan rate of the sweep operation was {scan_rate} V/s")
 
               
 
             # Data acquisition
-            vi_output = [test_output[0], test_output[1]]
+            vi_output = [test_output[0], test_output[1], test_output[2]]
             title = str (input('Give a title for the test conducted: '))
             vi_output_transpose = np.transpose(vi_output)
             file_path = str (input('Give file path and file name (with .csv extension) to record the data: '))
@@ -214,6 +290,3 @@ else:
 
         else: 
             print ('INVALID INPUT')
-
-        
-
