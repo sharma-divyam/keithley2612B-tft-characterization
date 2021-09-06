@@ -25,12 +25,6 @@ def get_target_volt(start_volt):
     while True:
         # Keeps asking the user for the valid target volt until they correclty provide one.
         target_volt = float (input ('Set the target voltage (in Volts) for sweep: '))
-        """
-        if target_volt > start_volt:
-            return target_volt
-        else: 
-            print ('INVALID INPUT: Target voltage must be greater than starting voltage.')
-        """
         return target_volt
         
 def get_step_volt(start_volt, target_volt):
@@ -220,7 +214,6 @@ else:
         if get_address_existence == 'y':
             is_valid_input = True
             smu_index = int(input('Enter the index number of the SMU: '))
-            #k = Keithley2600(address_list[smu_index])
             smu = rm.open_resource(address_list[smu_index])
             is_connected = True
             print ('Connected successfully!')
@@ -262,7 +255,7 @@ else:
 
             print("del t = " + str(del_t))
 
-            scan_rate = np.polyfit(del_t[0], test_output[0], 1)
+            scan_rate = np.polyfit(del_t[0], test_output[0], 1)[0]
 
             print (f"The scan rate of the sweep operation was {scan_rate} V/s")
 
