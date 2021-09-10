@@ -1,10 +1,18 @@
 from tkinter import *  
-#import Keithley2612B_voltage_sweep as kvs
+import pyvisa
+from tkinter.filedialog import asksaveasfile
+import Keithley2612B_voltage_sweep as kvs
+
+def save():
+    files = [('All Files', '*.*'), ('CSV File', '*.csv'), ('Text Document', '*.txt')]
+    file = asksaveasfile (filetypes = files, defaultextension = files)
+
+
 root = Tk()
 
 # Input Parameters frame
 frame_in_par = LabelFrame(root, text = "INPUT PARAMETERS")
-frame_in_par.grid(row = 0, column = 0)
+frame_in_par.grid()
 
 
 op_title = StringVar()
@@ -138,25 +146,44 @@ file_name = StringVar()
 file_name_box = Entry (frame_in_par, textvariable = file_name)
 file_name_box.grid (row = 33, column = 1, sticky = 'w')
 
+# Instrument Control frame
+ic_frame = LabelFrame(root, text = "INSTRUMENT CONTROL")
+ic_frame.grid(row = 0, column = 1, sticky = 'n')
+rm = kvs.get_resources()[0]
+address_list = kvs.get_resources()[1]
+
+address_select_title = StringVar()
+address_select_title.set ('Devices:')
+address_select_label = Label (ic_frame, textvariable = address_select_title)
+address_select_label.grid(sticky = 'w')
+
+test = ['1', '2', '3']
+selected_resc = StringVar()
+address_drop = OptionMenu (ic_frame, selected_resc, *test)
+address_drop.grid(row = 0, column = 1, sticky = 'w')
+
+#smu = rm.open_resource(selected_resc.get())
+
+def show_status():
+    Label (ic_frame, text = f"Connected to: {selected_resc.get()}").grid(row = 1, column = 1)
+
+check_status = Button (ic_frame, text = 'Show Status', command = lambda:show_status())
+check_status.grid(row = 1, sticky = 'w')
+
+timeout = StringVar()
+timeout_label = Label (ic_frame, text = 'Timeout (sec):').grid(row = 2, sticky = 'w')
+timeout_box = Entry (ic_frame, textvariable = timeout)
+timeout_box.grid (row = 2, column = 1, sticky = 'w')
 
 
 
-
-
-
-
-
-
-
-
-
-
-lb = Label (frame_in_par, textvariable=measurement_type)
-lb.grid(row = 11, column=0)
-
-
-
+# JV Curve frame 
+jv_frame = LabelFrame(root, text = "JV CURVE")
+k = StringVar()
+k.set ('Operator Name:')
+kl = Label (jv_frame, textvariable = k)
+kl.grid(row =0, sticky = 'w')
+jv_frame.grid(row = 0, column = 1, sticky='s')
 
 root.mainloop()
 
-print (op_name.get())
