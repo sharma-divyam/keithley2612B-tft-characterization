@@ -66,7 +66,7 @@ def get_sweep_type():
         else:
             print ('INVALID INPUT')
 
-def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end, scan_rate):
+def sweep_operation(smu_id, steps_no, pattern, nplc, min, max, scan_rate):
 
     smu_id.timeout = 300000
     
@@ -76,12 +76,14 @@ def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end, scan_rate
     # Set source function to DC volts
     smu_id.write ("smua.source.func = smua.OUTPUT_DCVOLTS")
   
+    """
     if start > end:
         max = start
         min = end
     else:
         max = end
         min = start
+    """
     
     # calculate time per voltage
     scan_interval_time = (((max *1.0000000000 - min * 1.0000000000)/(steps_no - 1)) / (scan_rate/1000))
@@ -97,90 +99,97 @@ def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end, scan_rate
 
     #smu_id.write (f"smua.measure.nplc = {nplc}")
     
+    outputs =[]
+    for i in len(pattern):
+        # Set current compliance. From my code. This is necessary for measuring our devices. 
+        smu_id.write("smua.source.limiti = 30e-3")
     
-    # Set current compliance. From my code. This is necessary for measuring our devices. 
-    smu_id.write("smua.source.limiti = 30e-3")
     
+        # Clear the buffers for storage
+        smu_id.write ("smua.nvbuffer1.clear()")
+        smu_id.write ("smua.nvbuffer2.clear()")
+        smu_id.write ("smua.nvbuffer1.clearcache()")
+        smu_id.write ("smua.nvbuffer2.clearcache()")
     
-    # Clear the buffers for storage
-    smu_id.write ("smua.nvbuffer1.clear()")
-    smu_id.write ("smua.nvbuffer2.clear()")
-    smu_id.write ("smua.nvbuffer1.clearcache()")
-    smu_id.write ("smua.nvbuffer2.clearcache()")
-    
-    # Configure timestamp collection option. I changed it to buffer1
-    smu_id.write ("smua.nvbuffer1.collecttimestamps = 1")
+        # Configure timestamp collection option. I changed it to buffer1
+        smu_id.write ("smua.nvbuffer1.collecttimestamps = 1")
 
-    # We need to include a sweep direction option. 
-    # Set the sweep parameters
-    smu_id.write (f"smua.trigger.source.linearv ({start}, {end}, {steps_no})")
-    smu_id.write("smua.trigger.measure.action = smua.ENABLE")  # ENABLE the sweep
+        # We need to include a sweep direction option. 
+        # Set the sweep parameters
+        if pattern[i] == 'f':
+            smu_id.write (f"smua.trigger.source.linearv ({min}, {max}, {steps_no})")
+        elif pattern[i] == 'r':
+            smu_id.write (f"smua.trigger.source.linearv ({max}, {min}, {steps_no})")
+        else:
+            return
 
-
-    # Set to measure current, and collect both current and voltage
-    smu_id.write ("smua.trigger.measure.iv(smua.nvbuffer1, smua.nvbuffer2)")
-    smu_id.write ("smua.trigger.source.action = smua.ENABLE")
+        smu_id.write("smua.trigger.measure.action = smua.ENABLE")  # ENABLE the sweep
 
 
-    # Set trigger count
-    smu_id.write (f"smua.trigger.count = {steps_no}")
+        # Set to measure current, and collect both current and voltage
+        smu_id.write ("smua.trigger.measure.iv(smua.nvbuffer1, smua.nvbuffer2)")
+        smu_id.write ("smua.trigger.source.action = smua.ENABLE")
 
-    # Turn on output and run
-    smu_id.write ("smua.source.output = smua.OUTPUT_ON")
-    smu_id.write ("smua.trigger.initiate()")
+
+        # Set trigger count
+        smu_id.write (f"smua.trigger.count = {steps_no}")
+
+        # Turn on output and run
+        smu_id.write ("smua.source.output = smua.OUTPUT_ON")
+        smu_id.write ("smua.trigger.initiate()")
    
     
-    # To check if the sweep is complete. This is necessary. Otherwise python continues executing the rest of the code,
-    # while the Keithley is still measuring. We can technically add just a sleep, but I don't fancy using a hardcoded sleep.
-    # Users won't want to include the time it should sleep too. Therefore it must be automatic.
-    smu_id.write("*OPC?")
-    id = smu_id.read()
-    print("Initial OPC ID = " + str(id))
-    
-
-    while int(id) != 1:
+        # To check if the sweep is complete. This is necessary. Otherwise python continues executing the rest of the code,
+        # while the Keithley is still measuring. We can technically add just a sleep, but I don't fancy using a hardcoded sleep.
+        # Users won't want to include the time it should sleep too. Therefore it must be automatic.
         smu_id.write("*OPC?")
         id = smu_id.read()
-        sleep(1)
-        print("Current ID = " + str(id))
+        print("Initial OPC ID = " + str(id))
+    
+
+        while int(id) != 1:
+            smu_id.write("*OPC?")
+            id = smu_id.read()
+            sleep(1)
+            print("Current ID = " + str(id))
         
-    # Turn output off. We should do this. Otherwise the Keithley holds it at the voltage it stops at.
-    # This will affect the measurement of our devices. We cannot leave it under bias for too long due to ionic migration.
-    smu_id.write("smua.source.output = smua.OUTPUT_OFF")
+        # Turn output off. We should do this. Otherwise the Keithley holds it at the voltage it stops at.
+        # This will affect the measurement of our devices. We cannot leave it under bias for too long due to ionic migration.
+        smu_id.write("smua.source.output = smua.OUTPUT_OFF")
     
-    ###### GET OUTPUT (TYPE IS STRING) THEN CONVERT TO FLOAT NUMPY ARRAY
+        ###### GET OUTPUT (TYPE IS STRING) THEN CONVERT TO FLOAT NUMPY ARRAY
     
-    # Get the currents
-    smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.readings)")
-    current_string = smu_id.read()
+        # Get the currents
+        smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.readings)")
+        current_string = smu_id.read()
 
     
-    # Get the voltages
-    smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer2.readings)")
-    voltage_string = smu_id.read()
+        # Get the voltages
+        smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer2.readings)")
+        voltage_string = smu_id.read()
 
     
-    # Get the timestamps
-    smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.timestamps)")
-    timestamp_string = smu_id.read()
+        # Get the timestamps
+        smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.timestamps)")
+        timestamp_string = smu_id.read()
     
-    current_string_array = current_string.split(',')
-    voltage_string_array = voltage_string.split(',')
-    timestamp_string_array = timestamp_string.split(',')
+        current_string_array = current_string.split(',')
+        voltage_string_array = voltage_string.split(',')
+        timestamp_string_array = timestamp_string.split(',')
     
-    currents = np.array(current_string_array, dtype=float)
-    voltages = np.array(voltage_string_array, dtype=float)
-    timestamps = np.array(timestamp_string_array, dtype=float)
+        currents = np.array(current_string_array, dtype=float)
+        voltages = np.array(voltage_string_array, dtype=float)
+        timestamps = np.array(timestamp_string_array, dtype=float)
 
-    output = [voltages, currents, timestamps]
+        outputs[i] = [voltages, currents, timestamps]
 
-    smu_id.write ("smua.nvbuffer1.clear()")
-    smu_id.write ("smua.nvbuffer2.clear()")
-    smu_id.write ("smua.nvbuffer1.clearcache()")
-    smu_id.write ("smua.nvbuffer2.clearcache()")
+        smu_id.write ("smua.nvbuffer1.clear()")
+        smu_id.write ("smua.nvbuffer2.clear()")
+        smu_id.write ("smua.nvbuffer1.clearcache()")
+        smu_id.write ("smua.nvbuffer2.clearcache()")
     
 
-    return output
+    return outputs
     """
     output index -> stored parameter
     0 -> voltage in Volt 
@@ -195,11 +204,13 @@ def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end, scan_rate
 rm = get_resources()[0]
 address_list = get_resources()[1]
 
+"""
 if len(address_list) == 0:
     print ('No device connected')
     
 else:
     print ('VISA address of the connected devices are:')
+
     
     for i in range(len(address_list)):
         print (f"{i}: {address_list[i]}")
@@ -283,3 +294,4 @@ else:
 
         else: 
             print ('INVALID INPUT')
+            """
