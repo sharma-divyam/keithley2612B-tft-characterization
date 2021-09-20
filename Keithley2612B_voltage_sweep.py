@@ -5,11 +5,12 @@
 
 #  Libraries
 
-from keithley2600 import Keithley2600
+
 import numpy as np
 import pyvisa
 import csv
 from datetime import datetime
+from time import sleep
 
 def get_resources():
     rm = pyvisa.ResourceManager()
@@ -17,7 +18,7 @@ def get_resources():
     resources = (rm, address)
     return resources
 
-def get_target_volt(start_volt):
+def get_target_volt (start_volt):
     """
     Return the target volt. Check validity of the input.
     :param start_volt: The starting point of the voltage sweep. 
@@ -72,128 +73,156 @@ def get_sweep_type():
         else:
             print ('INVALID INPUT')
 
-def sweep_operation(smu_id, steps_no, measure_delay, nplc, start, end, scan_rate):
+def sweep_operation(smu_id, steps_no, measure_delay, nplc, v1, v2, scan_rate, direction_string, scan_wait, isDark):
 
     smu_id.timeout = 300000
     
-    smu_id.write("errorqueue.clear()")
+    """
+    The backbone of the entire sweep operation.
 
-    print("Scan rate is: " + str(scan_rate))
-    # Set source function to DC volts
-    smu_id.write ("smua.source.func = smua.OUTPUT_DCVOLTS")
-  
-    if start > end:
-        max = start
-        min = end
-    else:
-        max = end
-        min = start
+    Update 2021-09-21:
     
-    # calculate time per voltage
-    scan_interval_time = (((max *1.0000000000 - min * 1.0000000000)/(steps_no - 1)) / (scan_rate/1000))
-    
-    # Subtract NPLC delay
-    scan_interval_time = scan_interval_time - (nplc/50)
-    #log.info("Wait time for voltage = %f" % scan_interval_time)
-    
-    print("Interval time is: " + str(scan_interval_time))
-    
-    # Set source delay 
-    smu_id.write("smua.source.delay = %f" % scan_interval_time)   
+        Added a new parameter to accept a string for directions
+        To choose the scan direction, the operator provides either a pattern (a string) or chooses "forward" or "reverse", which just submits a single letter
+        as the string. The function then enters a loop, where length is as long as the string pattern, and executes the different sweeps accordingly. 
 
-    #smu_id.write (f"smua.measure.nplc = {nplc}")
-    
-    
-    # Set current compliance. From my code. This is necessary for measuring our devices. 
-    smu_id.write("smua.source.limiti = 30e-3")
-    
-    
-    # Clear the buffers for storage
-    smu_id.write ("smua.nvbuffer1.clear()")
-    smu_id.write ("smua.nvbuffer2.clear()")
-    smu_id.write ("smua.nvbuffer1.clearcache()")
-    smu_id.write ("smua.nvbuffer2.clearcache()")
-    
-    # Configure timestamp collection option. I changed it to buffer1
-    smu_id.write ("smua.nvbuffer1.collecttimestamps = 1")
+     v1 and v2 parameters converted to v1 and v2, for more general treatment.
 
-    # We need to include a sweep direction option. 
-    # Set the sweep parameters
-    smu_id.write (f"smua.trigger.source.linearv ({start}, {end}, {steps_no})")
-    smu_id.write("smua.trigger.measure.action = smua.ENABLE")  # ENABLE the sweep
+    """
+
+    # Split direction_string into character array
+    direction_array = list(direction_string)  # e.g. if direction_string = "RFR", direction_array = ['R','F','R']
+
+    for direction in range(len(direction_array)):
 
 
-    # Set to measure current, and collect both current and voltage
-    smu_id.write ("smua.trigger.measure.iv(smua.nvbuffer1, smua.nvbuffer2)")
-    smu_id.write ("smua.trigger.source.action = smua.ENABLE")
+        smu_id.write("errorqueue.clear()")
 
-
-    # Set trigger count
-    smu_id.write (f"smua.trigger.count = {steps_no}")
-
-    # Turn on output and run
-    smu_id.write ("smua.source.output = smua.OUTPUT_ON")
-    smu_id.write ("smua.trigger.initiate()")
-   
+        #print("Scan rate is: " + str(scan_rate))
+        
+        # Set source function to DC volts
+        smu_id.write ("smua.source.func = smua.OUTPUT_DCVOLTS")
     
-    # To check if the sweep is complete. This is necessary. Otherwise python continues executing the rest of the code,
-    # while the Keithley is still measuring. We can technically add just a sleep, but I don't fancy using a hardcoded sleep.
-    # Users won't want to include the time it should sleep too. Therefore it must be automatic.
-    smu_id.write("*OPC?")
-    id = smu_id.read()
-    print("Initial OPC ID = " + str(id))
-    
+        if v1 > v2:
+            max = v1
+            min = v2
+        else:
+            max = v2
+            min = v1
+        
+        # calculate time per voltage
+        scan_interval_time = (((max *1.0000000000 - min * 1.0000000000)/(steps_no - 1)) / (scan_rate/1000))
+        
+        # Subtract NPLC delay
+        scan_interval_time = scan_interval_time - (nplc/50)
+        #log.info("Wait time for voltage = %f" % scan_interval_time)
+        
+        print("Interval time is: " + str(scan_interval_time))
+        
+        # Set source delay 
+        smu_id.write("smua.source.delay = %f" % scan_interval_time)   
 
-    while int(id) != 1:
+        #smu_id.write (f"smua.measure.nplc = {nplc}")
+        
+        
+        # Set current compliance. From my code. This is necessary for measuring our devices. 
+        smu_id.write("smua.source.limiti = 30e-3")
+        
+
+        # Clear the buffers for storage
+        smu_id.write ("smua.nvbuffer1.clear()")
+        smu_id.write ("smua.nvbuffer2.clear()")
+        smu_id.write ("smua.nvbuffer1.clearcache()")
+        smu_id.write ("smua.nvbuffer2.clearcache()")
+        
+        # Configure timestamp collection option. I changed it to buffer1
+        smu_id.write ("smua.nvbuffer1.collecttimestamps = 1")
+
+       
+        # UDPATE 2021-09-21: Sets the order according to the scan direction
+        # Set the sweep parameters
+        if direction == "R":
+            smu_id.write (f"smua.trigger.source.linearv ( {max}, {min}, {steps_no})")
+        elif direction == "F":
+            smu_id.write(f"smua.trigger.source.linearv({min},{max},{steps_no}")
+        else:
+            print("Unrecognised letter in string. Proceeding to do a reverse scan.")
+            smu_id.write (f"smua.trigger.source.linearv ( {max}, {min}, {steps_no})")
+
+
+        smu_id.write("smua.trigger.measure.action = smua.ENABLE")  # ENABLE the sweep
+
+        # Set to measure current, and collect both current and voltage
+        smu_id.write ("smua.trigger.measure.iv(smua.nvbuffer1, smua.nvbuffer2)")
+        smu_id.write ("smua.trigger.source.action = smua.ENABLE")
+
+
+        # Set trigger count
+        smu_id.write (f"smua.trigger.count = {steps_no}")
+
+        # Turn on output and run
+        smu_id.write ("smua.source.output = smua.OUTPUT_ON")
+        smu_id.write ("smua.trigger.initiate()")
+    
+        
+        # To check if the sweep is complete. This is necessary. Otherwise python continues executing the rest of the code,
+        # while the Keithley is still measuring. We can technically add just a sleep, but I don't fancy using a hardcoded sleep.
+        # Users won't want to include the time it should sleep too. Therefore it must be automatic.
         smu_id.write("*OPC?")
         id = smu_id.read()
-        sleep(1)
-        print("Current ID = " + str(id))
+        print("Initial OPC ID = " + str(id))
         
-    # Turn output off. We should do this. Otherwise the Keithley holds it at the voltage it stops at.
-    # This will affect the measurement of our devices. We cannot leave it under bias for too long due to ionic migration.
-    smu_id.write("smua.source.output = smua.OUTPUT_OFF")
-    
-    ###### GET OUTPUT (TYPE IS STRING) THEN CONVERT TO FLOAT NUMPY ARRAY
-    
-    # Get the currents
-    smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.readings)")
-    current_string = smu_id.read()
 
-    
-    # Get the voltages
-    smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer2.readings)")
-    voltage_string = smu_id.read()
+        while int(id) != 1:
+            smu_id.write("*OPC?")
+            id = smu_id.read()
+            sleep(1)
+            print("Current ID = " + str(id))
+            
+        # Turn output off. We should do this. Otherwise the Keithley holds it at the voltage it stops at.
+        # This will affect the measurement of our devices. We cannot leave it under bias for too long due to ionic migration.
+        smu_id.write("smua.source.output = smua.OUTPUT_OFF")
+        
+        ###### GET OUTPUT (TYPE IS STRING) THEN CONVERT TO FLOAT NUMPY ARRAY
+        
+        # Get the currents
+        smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.readings)")
+        current_string = smu_id.read()
 
-    
-    # Get the timestamps
-    smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.timestamps)")
-    timestamp_string = smu_id.read()
-    
-    current_string_array = current_string.split(',')
-    voltage_string_array = voltage_string.split(',')
-    timestamp_string_array = timestamp_string.split(',')
-    
-    currents = np.array(current_string_array, dtype=float)
-    voltages = np.array(voltage_string_array, dtype=float)
-    timestamps = np.array(timestamp_string_array, dtype=float)
+        
+        # Get the voltages
+        smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer2.readings)")
+        voltage_string = smu_id.read()
 
-    output = [voltages, currents, timestamps]
+        
+        # Get the timestamps
+        smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.timestamps)")
+        timestamp_string = smu_id.read()
+        
+        current_string_array = current_string.split(',')
+        voltage_string_array = voltage_string.split(',')
+        timestamp_string_array = timestamp_string.split(',')
+        
+        currents = np.array(current_string_array, dtype=float)
+        voltages = np.array(voltage_string_array, dtype=float)
+        timestamps = np.array(timestamp_string_array, dtype=float)
 
-    smu_id.write ("smua.nvbuffer1.clear()")
-    smu_id.write ("smua.nvbuffer2.clear()")
-    smu_id.write ("smua.nvbuffer1.clearcache()")
-    smu_id.write ("smua.nvbuffer2.clearcache()")
-    
+        output = [voltages, currents, timestamps]
 
-    return output
-    """
-    output index -> stored parameter
-    0 -> voltage in Volt 
-    1 -> current in Ampere
-    2 -> timestamps (not sure of the format)
-    
-    """
+        smu_id.write ("smua.nvbuffer1.clear()")
+        smu_id.write ("smua.nvbuffer2.clear()")
+        smu_id.write ("smua.nvbuffer1.clearcache()")
+        smu_id.write ("smua.nvbuffer2.clearcache()")
+        
+
+        return output
+        """
+        output index -> stored parameter
+        0 -> voltage in Volt 
+        1 -> current in Ampere
+        2 -> timestamps (not sure of the format)
+        
+        """
 
 
 # Connecting the instrument
@@ -231,10 +260,10 @@ else:
 
             # Source voltage from Channel A
 
-            start_volt = float (input ('Set the starting voltage (in Volts) for sweep: '))
+            start_volt = float (input ('Set the v1ing voltage (in Volts) for sweep: '))
 
             target_volt = get_target_volt(start_volt)
-            
+                
             steps_num = int (input ('Enter the number of steps: '))
 
             integration_time = get_integration_time()
@@ -253,7 +282,7 @@ else:
 
             # scan rate 
             # (Unsure of the data type of measured voltage and timestamps. This will only work if both are float or int)   
-    
+
             del_t = np.empty((1,steps_num))
             print("The test_output value is: " + str(test_output[0]))
             print("The length is: " + str(len(test_output[2])))
@@ -266,7 +295,7 @@ else:
 
             print (f"The scan rate of the sweep operation was {scan_rate} V/s")
 
-              
+            
 
             # Data acquisition
             vi_output = [test_output[0], test_output[1], test_output[2]]
