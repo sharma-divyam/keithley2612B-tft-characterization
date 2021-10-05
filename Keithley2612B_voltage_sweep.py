@@ -5,7 +5,7 @@
 
 #  Libraries
 
-from keithley2600 import Keithley2600
+
 import numpy as np
 import pyvisa
 import csv
@@ -99,43 +99,64 @@ def sweep_operation(smu_id, steps_no, pattern, nplc, min, max, scan_rate):
 
     #smu_id.write (f"smua.measure.nplc = {nplc}")
     
-    outputs =[]
-    for i in len(pattern):
+    outputs = []
+
+    for i in range(len(pattern)):
         # Set current compliance. From my code. This is necessary for measuring our devices. 
+        
+        # For lists, either you need to predetermine its size, or dynamically expand. Otherwise the line where you do:
+        # outputs[i] = [voltage, current, timestamps]
+        # will fail because outputs[0] doesn't exist (it's still empty.) 
+        # I therefore added the step below to deliberately expand the list as the loop progresses. 0 is just a random number that
+        # will be replaced later. 
+
+        outputs.append(0) 
+        
+        
+        print("Entered loop i = " + str(i) + " with scan direction = " + pattern[i])
+
         smu_id.write("smua.source.limiti = 30e-3")
-    
+        print("Current limit set.")
     
         # Clear the buffers for storage
         smu_id.write ("smua.nvbuffer1.clear()")
         smu_id.write ("smua.nvbuffer2.clear()")
         smu_id.write ("smua.nvbuffer1.clearcache()")
         smu_id.write ("smua.nvbuffer2.clearcache()")
+        print("Buffers cleared.")
     
         # Configure timestamp collection option. I changed it to buffer1
         smu_id.write ("smua.nvbuffer1.collecttimestamps = 1")
+        print("Timestamp collection activated.")
 
         # We need to include a sweep direction option. 
         # Set the sweep parameters
         if pattern[i] == 'f':
             smu_id.write (f"smua.trigger.source.linearv ({min}, {max}, {steps_no})")
+            print("Forward sweep configured.")
         elif pattern[i] == 'r':
             smu_id.write (f"smua.trigger.source.linearv ({max}, {min}, {steps_no})")
+            print("Reverse sweep configured.")
         else:
-            return
+            print("Breaking loop.")
+            break
 
         smu_id.write("smua.trigger.measure.action = smua.ENABLE")  # ENABLE the sweep
-
+        print("Sweep parameters enabled.")
 
         # Set to measure current, and collect both current and voltage
         smu_id.write ("smua.trigger.measure.iv(smua.nvbuffer1, smua.nvbuffer2)")
         smu_id.write ("smua.trigger.source.action = smua.ENABLE")
+        print("Set to measure current.")
 
 
         # Set trigger count
         smu_id.write (f"smua.trigger.count = {steps_no}")
+        print("Trigger count set: " + str(steps_no))
 
         # Turn on output and run
         smu_id.write ("smua.source.output = smua.OUTPUT_ON")
+        print("Output turned on. Next step is initiate.")
         smu_id.write ("smua.trigger.initiate()")
    
     
@@ -162,33 +183,39 @@ def sweep_operation(smu_id, steps_no, pattern, nplc, min, max, scan_rate):
         # Get the currents
         smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.readings)")
         current_string = smu_id.read()
-
+        print("Currents obtained (string form).")
     
         # Get the voltages
         smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer2.readings)")
         voltage_string = smu_id.read()
-
+        print("Voltages obtained (string form).")
     
         # Get the timestamps
         smu_id.write(f"printbuffer(1, {steps_no}, smua.nvbuffer1.timestamps)")
         timestamp_string = smu_id.read()
+        print("Timestamps obtained (string form).")
     
         current_string_array = current_string.split(',')
         voltage_string_array = voltage_string.split(',')
         timestamp_string_array = timestamp_string.split(',')
     
         currents = np.array(current_string_array, dtype=float)
+        print("Successful conversion of current string to array of floats.")
         voltages = np.array(voltage_string_array, dtype=float)
+        print("Successful conversion of voltage string to array of floats.")
         timestamps = np.array(timestamp_string_array, dtype=float)
+        print("Successful conversion of timestamp string to array of floats.")
 
         outputs[i] = [voltages, currents, timestamps]
+        print("Information pushed to index i = " + str(i) + " of outputs list.")
 
         smu_id.write ("smua.nvbuffer1.clear()")
         smu_id.write ("smua.nvbuffer2.clear()")
         smu_id.write ("smua.nvbuffer1.clearcache()")
         smu_id.write ("smua.nvbuffer2.clearcache()")
-    
-
+        print("Buffers cleared again.")
+    print(outputs)
+    print("Returning to Tk window.")
     return outputs
     """
     output index -> stored parameter
