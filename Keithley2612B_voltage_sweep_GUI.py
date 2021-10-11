@@ -2,6 +2,9 @@ from tkinter import *
 import pyvisa
 from tkinter.filedialog import asksaveasfile
 import Keithley2612B_voltage_sweep as kvs
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
+NavigationToolbar2Tk)
 
 def save():
     files = [('All Files', '*.*'), ('CSV File', '*.csv'), ('Text Document', '*.txt')]
@@ -9,7 +12,7 @@ def save():
 
 
 root = Tk()
-
+root.title ('Voltage Sweep - Keithley 2612B')
 # Input Parameters frame
 frame_in_par = LabelFrame(root, text = "INPUT PARAMETERS")
 frame_in_par.grid()
@@ -19,7 +22,7 @@ op_label = Label (frame_in_par, text = 'Operator Name:')
 op_label.grid(row =0, sticky = 'w')
 op_name = StringVar()
 op_name_box = Entry (frame_in_par, textvariable = op_name)
-op_name_box.grid (row = 0, column = 1, sticky = 'w')
+op_name_box.grid()
 
 
 type_select = Label (frame_in_par, text = "Select type:")
@@ -174,7 +177,7 @@ file_name_box.grid (row = 33, column = 1, sticky = 'w')
 frame_ic = LabelFrame(root, text = "INSTRUMENT CONTROL")
 frame_ic.grid(row = 0, column = 1, sticky = 'n')
 rm = kvs.get_resources()[0]
-address_list = kvs.get_resources()[1][0]
+address_list = kvs.get_resources()[1]
 print(address_list)
 
 address_select_label = Label (frame_ic, text = 'Devices:')
@@ -185,7 +188,7 @@ selected_resc = address_list
 address_drop = OptionMenu (frame_ic, selected_resc, *test)
 address_drop.grid(row = 0, column = 1, sticky = 'w')
 
-smu = rm.open_resource(selected_resc)
+#smu = rm.open_resource(selected_resc)
 
 def show_status():
     Label (frame_ic, text = f"Connected to: {selected_resc}").grid(row = 1, column = 1)
@@ -215,12 +218,50 @@ save_data.grid(row = 3, column = 2, sticky = 'w')
 
 
 # JV Curve frame 
+
 frame_jv = LabelFrame(root, text = "JV CURVE")
-k = StringVar()
-k.set ('(Test info.)')
-kl = Label (frame_jv, textvariable = k)
-kl.grid(row =0, sticky = 'w')
-frame_jv.grid(row = 0, column = 1, sticky='w')
+frame_jv.grid(row = 0, column = 1, sticky='sw')
+
+graph_container = Canvas (frame_jv, height = 400, width = 600, bg = 'white')
+graph_container.grid(row = 1, column = 0)
+
+
+def plot():
+  
+    # the figure that will contain the plot
+    fig = Figure(figsize = (6, 4), dpi = 100)
+  
+    # list of squares
+    y = [i*2 for i in range(101)]
+    k = [i*3 for i in range(101)]
+  
+    # adding the subplot
+    plot1 = fig.add_subplot(111)
+  
+    # plotting the graph
+    plot1.plot(y, color = 'green')
+    plot1.plot(k, color = 'green')
+    plot1.set_xlabel('Voltage (mV)')
+    plot1.set_ylabel('Current Density (mA/sq. cm)')
+  
+    # creating the Tkinter canvas
+    # containing the Matplotlib figure
+    canvas = FigureCanvasTkAgg(fig, master = frame_jv)  
+    canvas.draw()
+  
+    # placing the canvas on the Tkinter window
+    canvas.get_tk_widget().grid(row = 1, column = 0)
+    """
+    # creating the Matplotlib toolbar
+    toolbar = NavigationToolbar2Tk(canvas, frame_jv)
+    toolbar.update()
+  
+    # placing the toolbar on the Tkinter window
+    canvas.get_tk_widget().grid(row = 2)
+    """
+
+plot_button = Button (frame_jv, text = 'PLOT', command = lambda:plot())
+plot_button.grid(row = 0, column = 0)
 
 root.mainloop()
 
