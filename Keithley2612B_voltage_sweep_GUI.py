@@ -222,8 +222,10 @@ save_data.grid(row = 3, column = 2, sticky = 'w')
 frame_jv = LabelFrame(root, text = "JV CURVE")
 frame_jv.grid(row = 0, column = 1, sticky='sw')
 
-graph_container = Canvas (frame_jv, height = 400, width = 600, bg = 'white')
-graph_container.grid(row = 1, column = 0)
+def clear_canvas ():
+    graph_container = Canvas (frame_jv, height = 400, width = 600, bg = 'white')
+    graph_container.grid(row = 1, column = 0)
+clear_canvas()
 
 
 def plot():
@@ -231,7 +233,6 @@ def plot():
     # the figure that will contain the plot
     fig = Figure(figsize = (6, 4), dpi = 100)
   
-    # list of squares
     y = [i*2 for i in range(101)]
     k = [i*3 for i in range(101)]
   
@@ -262,6 +263,10 @@ def plot():
 
 plot_button = Button (frame_jv, text = 'PLOT', command = lambda:plot())
 plot_button.grid(row = 0, column = 0)
+
+
+clear_button = Button (frame_jv, text = 'CLEAR', command = lambda:clear_canvas())
+clear_button.grid(row = 0, column = 0, sticky = 'e')
 
 root.mainloop()
 
