@@ -5,6 +5,7 @@ import Keithley2612B_voltage_sweep as kvs
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, 
 NavigationToolbar2Tk)
+import numpy as np 
 
 def save():
     files = [('All Files', '*.*'), ('CSV File', '*.csv'), ('Text Document', '*.txt')]
@@ -225,6 +226,19 @@ frame_jv.grid(row = 0, column = 1, sticky='sw')
 def clear_canvas ():
     graph_container = Canvas (frame_jv, height = 400, width = 600, bg = 'white')
     graph_container.grid(row = 1, column = 0)
+    fig = Figure(figsize = (6, 4), dpi = 100)
+    blank = fig.add_subplot(111)
+    blank.set_xlabel('Voltage (mV)')
+    blank.set_ylabel('Current Density (mA/sq. cm)')
+    blank.set_yticks([0], minor = True)
+    blank.yaxis.grid(True)
+    blank.xaxis.grid(True)
+    canvas = FigureCanvasTkAgg(fig, master = frame_jv)  
+    canvas.draw()
+    canvas.get_tk_widget().grid(row = 1, column = 0)
+
+
+
 clear_canvas()
 
 
@@ -233,17 +247,23 @@ def plot():
     # the figure that will contain the plot
     fig = Figure(figsize = (6, 4), dpi = 100)
   
-    y = [i*2 for i in range(101)]
-    k = [i*3 for i in range(101)]
+    x = np.arange (-3,4)
+    y = [[-1,0,-4,15,24,10,7], [9,-1,6,7,15,-13,2]]
   
     # adding the subplot
     plot1 = fig.add_subplot(111)
   
     # plotting the graph
-    plot1.plot(y, color = 'green')
-    plot1.plot(k, color = 'green')
+    for i in range (len(y)):
+        plot1.plot(x,y[i], label = f"y[{i}]")
+        plot1.legend(loc='upper left')
+
     plot1.set_xlabel('Voltage (mV)')
     plot1.set_ylabel('Current Density (mA/sq. cm)')
+    plot1.set_yticks([0], minor = True)
+    plot1.yaxis.grid(True)
+    plot1.xaxis.grid(True)
+
   
     # creating the Tkinter canvas
     # containing the Matplotlib figure
