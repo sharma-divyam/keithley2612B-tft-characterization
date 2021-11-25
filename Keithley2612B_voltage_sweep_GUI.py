@@ -39,10 +39,35 @@ class Application(tk.Tk):
 
         # Define the layout
         self.title('Voltage Sweep - Keithley 2612B')
+        self.main_frame = tk.Frame(self)
+        self.main_frame.pack(side = 'top', fill = 'both', expand = True)
+        self.main_canvas = tk.Canvas(self.main_frame, height = 605, width = 1000)
+        self.main_canvas.pack(side= 'left', fill='both', anchor = 'n', expand=True)
+
+        y_scrollbar = tk.Scrollbar(self.main_frame, orient='vertical', command=self.main_canvas.yview)
+        y_scrollbar.pack(side='right',fill='y', anchor = 'ne')
+
+        x_scrollbar = tk.Scrollbar(self.main_frame, orient='horizontal', command=self.main_canvas.xview)
+        x_scrollbar.pack(side='bottom', anchor='s', fill='x')
+        self.main_canvas.configure(yscrollcommand=y_scrollbar.set)
+        self.main_canvas.configure(xscrollcommand=x_scrollbar.set)
+        self.main_canvas.bind("<Configure>", lambda e: self.main_canvas.config(scrollregion= self.main_canvas.bbox('all'))) 
+
+        self.second_frame = tk.Frame (self.main_canvas)
+        self.main_canvas.create_window ((1,0), window = self.second_frame, anchor = 'nw') 
+        #self.second_frame.pack(side= 'left' ,fill='both',expand=1)
+
+
+        """
+        self.scrollbar_frame = tk.Frame(self.main_frame)
+        self.scrollbar_frame.grid(column = 1)
+        self.main_scroll = tk.Scrollbar(self.scrollbar_frame, orient = 'vertical', command = self.main_canvas.yview)
+        self.main_scroll.grid ()
+        """
 
         # Input Parameters frame
-        self.frame_in_par = tk.LabelFrame(self, text = "INPUT PARAMETERS")
-        self.frame_in_par.grid()
+        self.frame_in_par = tk.LabelFrame(self.second_frame, text = "INPUT PARAMETERS")
+        self.frame_in_par.grid(rowspan = 3)
 
         # Operator Name
         self.op_label = tk.Label (self.frame_in_par, text = 'Operator Name:')
@@ -192,18 +217,18 @@ class Application(tk.Tk):
         #self.clear_button.grid(row = 0, column = 0, sticky = 'e')
 
         # Instrument Control frame
-        self.frame_ic = tk.LabelFrame(self, text = "INSTRUMENT CONTROL")
-        self.frame_ic.grid(row = 0, column = 1, sticky = 'n')
+        self.frame_ic = tk.LabelFrame(self.second_frame, text = "INSTRUMENT CONTROL")
+        self.frame_ic.grid(row = 0, column = 1)
         
         # PyVisa set-up.
         # I chose to make the ResourceManager an object variable as well, so that the actual connection,
         # which is done by another function (selectResource()), need not declare a new ResourceManager just to make the connection.
         # This code will fail if no devices are detected. 
-
+        """
         self.rm = pyvisa.ResourceManager()
         self.address_list = list(self.rm.list_resources()) # list_resources() gives a tuple, I converted it to a list.
         print("Address list: " + str(self.address_list))
-
+        
         self.address_select_label = tk.Label (self.frame_ic, text = 'Devices:')
         self.address_select_label.grid(sticky = 'w')
 
@@ -212,7 +237,8 @@ class Application(tk.Tk):
         self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.address_list)
         self.address_drop.grid(row = 0, column = 1, sticky = 'w')
         
-        self.selected_resc.trace('w',self.selectResource)        
+        self.selected_resc.trace('w',self.selectResource)  
+        """
 
         # Check status button
         self.check_status = tk.Button (self.frame_ic, text = 'Show Status', command = lambda: self.show_status())
@@ -236,9 +262,15 @@ class Application(tk.Tk):
     
         
         # JV Curve frame 
-        self.frame_jv = tk.LabelFrame(self, text = "JV CURVE")
-        self.frame_jv.grid(row = 0, column = 1, sticky='sw')
+        self.frame_jv = tk.LabelFrame(self.second_frame, text = "JV CURVE")
+        self.frame_jv.grid(row = 1, column = 1, rowspan = 2)
         self.canvas = self.clear_canvas()
+
+        # Output Log frame
+        self.out_log = tk.LabelFrame(self.second_frame, text = "OUTPUT LOG")
+        self.out_log.grid (row = 0, column = 2, sticky = 'nw')
+        self.scan_label = tk.Label (self.out_log, text = 'SCAN 1:')
+        self.scan_label.grid()
 
         # Removed the ones below.
         # When we scan, we expect that the graphs show immediately, and on starting the next scan, the screen is cleared and 
@@ -362,7 +394,7 @@ class Application(tk.Tk):
         Function to show the connection to the VISA resource.
         """
 
-        Label (self.frame_ic, text = f"Connected to: {self.smu}").grid(row = 1, column = 1)
+        tk.Label (self.frame_ic, text = f"Connected to: {self.smu}").grid(row = 1, column = 1)
 
 
 
