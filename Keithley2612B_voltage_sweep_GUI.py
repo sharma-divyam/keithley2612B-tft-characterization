@@ -160,7 +160,7 @@ class Application(tk.Tk):
         # Current compliance
         self.curr_lim_label = tk.Label (self.frame_in_par, text = 'Current Limit (mA):')
         self.curr_lim_label.grid(row = 29, sticky = 'w')
-        self.curr_lim = tk.DoubleVar(self,30)
+        self.curr_lim = tk.DoubleVar(self,60)
         self.curr_lim_box = tk.Entry (self.frame_in_par, textvariable = self.curr_lim)
         self.curr_lim_box.grid (row = 29, column = 1, sticky = 'w')
 

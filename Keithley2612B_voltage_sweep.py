@@ -263,7 +263,8 @@ def sweep_operation(smu_id, \
     ##################################### JV PARAMETERS CALCULATION CODE ##########################################
 
     # Calculate JV params
-    overall = calculate_jv_params(df_jvparams,cell_area,irradiance,min,max)
+    # Updated 2021-11-26: Irradiance multiplied by 100 because value input is in Suns rather than mW/cm2
+    overall = calculate_jv_params(df_jvparams,cell_area,(irradiance*100),min,max)
     jv_params = overall['Data']
     jv_params_errors = overall['Errors']
 
@@ -365,15 +366,15 @@ def sweep_operation(smu_id, \
         1: ['Current (mA)'] + string_formatter(currents), \
         2: ['Timestamp'] + string_formatter(timestamps), \
         3: ['-'], \
-        4: ['SampleInfo'] + (['Operator','Sample_ID','Cell_Type','Measurement_Type','Temp','Irradiance','DateCreated']),\
-        5: ['Values'] + ([operator,'\''+sample_id,celltype,measurement_type,str(temp),str(irradiance),str(datec)]),\
-        6: ['Units'] + (['-','-','-','-',"degC","mW/cm2",'-']), \
-        7: ['-','-','-','-','-','-','-','-'],\
-        8: ['-','-','-','-','-','-','-','-'],\
-        9: ['-','-','-','-','-','-','-','-'],\
-        10: ['-','-','-','-','-','-','-','-'],\
-        11: ['-','-','-','-','-','-','-','-'],\
-        12: ['-','-','-','-','-','-','-','-']
+        4: ['SampleInfo'] + (['Operator','Sample_ID','Cell_Type','Measurement_Type','Temp','Irradiance','DateCreated','MinVolt','MaxVolt']),\
+        5: ['Values'] + ([operator,'\''+sample_id,celltype,measurement_type,str(temp),str(irradiance),str(datec),str(min),str(max)]),\
+        6: ['Units'] + (['-','-','-','-',"degC","Sun(s)",'-','V','V']), \
+        7: ['-','-','-','-','-','-','-','-','-','-'],\
+        8: ['-','-','-','-','-','-','-','-','-','-'],\
+        9: ['-','-','-','-','-','-','-','-','-','-'],\
+        10: ['-','-','-','-','-','-','-','-','-','-'],\
+        11: ['-','-','-','-','-','-','-','-','-','-'],\
+        12: ['-','-','-','-','-','-','-','-','-','-']
         }
 
     # Creation of first DataFrame
