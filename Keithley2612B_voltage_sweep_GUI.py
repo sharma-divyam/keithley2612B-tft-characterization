@@ -50,7 +50,7 @@ class Application(tk.Tk):
         self.xscrollbar_frame.pack(side = 'bottom', fill = 'both', expand = True, anchor = 'n')
 
         # The main canvas contains the sub frame.
-        self.main_canvas = tk.Canvas(self.main_frame, height = 604, width = 1000)
+        self.main_canvas = tk.Canvas(self.main_frame, height = 604, width = 1200)
         self.main_canvas.pack(side= 'left', fill='both', anchor = 'n', expand=True)
 
         # Initializing scrollbars
@@ -272,9 +272,14 @@ class Application(tk.Tk):
 
         # Output Log frame
         self.out_log = tk.LabelFrame(self.sub_frame, text = "OUTPUT LOG")
-        self.out_log.grid (row = 0, column = 2, sticky = 'nw')
-        self.scan_label = tk.Label (self.out_log, text = 'SCAN 1:')
-        self.scan_label.grid()
+        self.out_log.grid (row = 0, column = 2, rowspan = 3, sticky = 'n' )
+        
+        calc_params = tk.Button (self.out_log, text = 'CALCULATE PARAMETERS', command =lambda:(self.display_log()))
+        calc_params.grid(sticky = 'w')
+        
+        self.out_canvas = tk.Canvas (self.out_log, height = 555, width = 200, bg = 'white').grid (row = 1, sticky ='n')
+
+        
 
         # Removed the ones below.
         # When we scan, we expect that the graphs show immediately, and on starting the next scan, the screen is cleared and 
@@ -458,6 +463,7 @@ class Application(tk.Tk):
             
             # Calls the plot function to plot it immediately.
             self.plot(temp_df,self.canvas,repetition)
+            #self.display_log()
             
             # This is if the user wants a pause between multiple scans. Default value is set to 0.
             sleep(float(self.multidelay_box.get()))
@@ -531,6 +537,25 @@ class Application(tk.Tk):
         # only appear after all scans are done. With update(), the canvas is updated with each iteration of the loop in start().
 
         self.update()
+    
+    def display_log(self):
+            textbox = tk.Text(self.out_log, width = '25', height = '35')
+            textbox.grid(row = 1, sticky = 'n')
+
+            for thing in range(len(str(self.pattern_box.get()))):
+        
+                textbox.insert('end', f" Scan {thing+1}:\n")
+                textbox.insert('end', "__________\n")
+                textbox.insert('end', "\n")
+    """
+        textbox = tk.Text(self.out_log, width = '50')
+        textbox.grid(row = 1, sticky = 'n', rowspan = len(str(self.pattern_box.get())))
+        params = kvs.calculate_jv_params()
+            
+        for i in range(len(str(self.pattern_box.get()))):
+            textbox.insert('end', f"REP {i+1}\n")
+            textbox.insert('end', f"    Voc = {}")
+        """
         
 
 
