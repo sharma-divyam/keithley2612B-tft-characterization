@@ -37,36 +37,40 @@ class Application(tk.Tk):
         self.plot1 = None
         self.graph_container = None
 
-        # Define the layout
+        ####################################### LAYOUT ####################################################
+
         self.title('Voltage Sweep - Keithley 2612B')
+
+        # The main frame contains the main canvas and the vertical scrollbar
         self.main_frame = tk.Frame(self)
         self.main_frame.pack(side = 'top', fill = 'both', expand = True)
-        self.main_canvas = tk.Canvas(self.main_frame, height = 605, width = 1000)
+
+        # Created a specific frame underneath the main frame to place the horizontal scrollbar.
+        self.xscrollbar_frame = tk.Frame(self)
+        self.xscrollbar_frame.pack(side = 'bottom', fill = 'both', expand = True, anchor = 'n')
+
+        # The main canvas contains the sub frame.
+        self.main_canvas = tk.Canvas(self.main_frame, height = 604, width = 1000)
         self.main_canvas.pack(side= 'left', fill='both', anchor = 'n', expand=True)
 
+        # Initializing scrollbars
         y_scrollbar = tk.Scrollbar(self.main_frame, orient='vertical', command=self.main_canvas.yview)
         y_scrollbar.pack(side='right',fill='y', anchor = 'ne')
+        x_scrollbar = tk.Scrollbar(self.xscrollbar_frame, orient='horizontal', command=self.main_canvas.xview)
+        x_scrollbar.pack(side='top', anchor='n', fill='x')
 
-        x_scrollbar = tk.Scrollbar(self.main_frame, orient='horizontal', command=self.main_canvas.xview)
-        x_scrollbar.pack(side='bottom', anchor='s', fill='x')
+        # Configuring the scrollbars
         self.main_canvas.configure(yscrollcommand=y_scrollbar.set)
         self.main_canvas.configure(xscrollcommand=x_scrollbar.set)
         self.main_canvas.bind("<Configure>", lambda e: self.main_canvas.config(scrollregion= self.main_canvas.bbox('all'))) 
 
-        self.second_frame = tk.Frame (self.main_canvas)
-        self.main_canvas.create_window ((1,0), window = self.second_frame, anchor = 'nw') 
-        #self.second_frame.pack(side= 'left' ,fill='both',expand=1)
+        # The sub frame overlaps the main canvas to. This is the parent container for all the widgets. This was necessary for the scroll function to work when the window is resized. 
+        self.sub_frame = tk.Frame (self.main_canvas)
+        self.main_canvas.create_window ((0,0), window = self.sub_frame, anchor = 'nw') 
 
-
-        """
-        self.scrollbar_frame = tk.Frame(self.main_frame)
-        self.scrollbar_frame.grid(column = 1)
-        self.main_scroll = tk.Scrollbar(self.scrollbar_frame, orient = 'vertical', command = self.main_canvas.yview)
-        self.main_scroll.grid ()
-        """
 
         # Input Parameters frame
-        self.frame_in_par = tk.LabelFrame(self.second_frame, text = "INPUT PARAMETERS")
+        self.frame_in_par = tk.LabelFrame(self.sub_frame, text = "INPUT PARAMETERS")
         self.frame_in_par.grid(rowspan = 3)
 
         # Operator Name
@@ -217,7 +221,7 @@ class Application(tk.Tk):
         #self.clear_button.grid(row = 0, column = 0, sticky = 'e')
 
         # Instrument Control frame
-        self.frame_ic = tk.LabelFrame(self.second_frame, text = "INSTRUMENT CONTROL")
+        self.frame_ic = tk.LabelFrame(self.sub_frame, text = "INSTRUMENT CONTROL")
         self.frame_ic.grid(row = 0, column = 1)
         
         # PyVisa set-up.
@@ -262,12 +266,12 @@ class Application(tk.Tk):
     
         
         # JV Curve frame 
-        self.frame_jv = tk.LabelFrame(self.second_frame, text = "JV CURVE")
+        self.frame_jv = tk.LabelFrame(self.sub_frame, text = "JV CURVE")
         self.frame_jv.grid(row = 1, column = 1, rowspan = 2)
         self.canvas = self.clear_canvas()
 
         # Output Log frame
-        self.out_log = tk.LabelFrame(self.second_frame, text = "OUTPUT LOG")
+        self.out_log = tk.LabelFrame(self.sub_frame, text = "OUTPUT LOG")
         self.out_log.grid (row = 0, column = 2, sticky = 'nw')
         self.scan_label = tk.Label (self.out_log, text = 'SCAN 1:')
         self.scan_label.grid()
