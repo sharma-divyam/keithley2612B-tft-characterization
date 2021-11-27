@@ -116,7 +116,7 @@ def sweep_operation(smu_id, \
     #smu_id.write (f"smua.measure.nplc = {nplc}")
     
     # Dictionary to contain the data for plotting. 
-    plotting_dictionary = {'Potential (V)':[],'Current Density (mA/cm2)':[],'Scan Rep':[]}
+    plotting_dictionary = {'Potential (V)':[],'Current Density (mA/cm2)':[],'Scan Rep':[], 'Voc (V)':[],'Isc (mA)':[],'Jsc (mA/cm2)':[],'Imax (mA)':[],'Vmax (V)':[],'Pmax (mW/cm2)':[],'FF (%)':[],'PCE (%)':[],'Rseries (ohm)':[],'Rshunt (ohm)':[]}
     
 
 
@@ -267,6 +267,17 @@ def sweep_operation(smu_id, \
     overall = calculate_jv_params(df_jvparams,cell_area,(irradiance*100),min,max)
     jv_params = overall['Data']
     jv_params_errors = overall['Errors']
+
+    plotting_dictionary['Voc (V)'].append(jv_params['Voc'])
+    plotting_dictionary['Isc (mA)'].append(jv_params['Isc'])
+    plotting_dictionary['Jsc (mA/cm2)'].append(jv_params['Jsc'])
+    plotting_dictionary['Imax (mA)'].append(jv_params['Imax'])
+    plotting_dictionary['Vmax (V)'].append(jv_params['Vmax'])
+    plotting_dictionary['Pmax (mW/cm2)'].append(jv_params['Pmax'])
+    plotting_dictionary['FF (%)'].append(jv_params['FF'])
+    plotting_dictionary['PCE (%)'].append(jv_params['PCE'])
+    plotting_dictionary['Rseries (ohm)'].append(jv_params['Rser'])
+    plotting_dictionary['Rshunt (ohm)'].append(jv_params['Rshunt'])
 
     ##################################### FILE SAVING AND CSV FORMATTING CODE #####################################
 
@@ -502,7 +513,7 @@ def calculate_jv_params(data,cell_area,irradiance,min_bound,max_bound):
 
     # Sort the dataframe with increasing voltage first
     
-    # Data is received as a a DataFrame, and usually assigning an existing DataFrame to a new variable only assigns the reference (pointer) rather 
+    # Data is received as a DataFrame, and usually assigning an existing DataFrame to a new variable only assigns the reference (pointer) rather 
     # than creating a new DataFrame. Hence deep copy is required. 
 
     data1 = data.copy(deep=True)  
