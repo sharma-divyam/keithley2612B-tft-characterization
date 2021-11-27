@@ -274,7 +274,7 @@ class Application(tk.Tk):
         self.out_log = tk.LabelFrame(self.sub_frame, text = "OUTPUT LOG")
         self.out_log.grid (row = 0, column = 2, rowspan = 3, sticky = 'n' )
         
-        self.out_canvas = tk.Canvas (self.out_log, height = 580, width = 200, bg = 'white').grid (sticky ='n')
+        self.out_canvas = tk.Canvas (self.out_log, height = 580, width = 200, bg = 'white').grid (row = 0, column = 0, sticky ='n')
 
         
 
@@ -425,8 +425,10 @@ class Application(tk.Tk):
         print("Pattern is " + str(self.pattern_box.get()))
 
         # Created text widget for output log
-        self.out_txt = tk.Text(self.out_log, width = '25', height = '40')
-        self.out_txt.grid(sticky = 'n')
+        
+        self.out_txt = tk.Text(self.out_log, width = '25', height = '36')
+        self.out_txt.grid(row = 0, column = 0, sticky = 'n')
+        
         
         for i in range(len(str(self.pattern_box.get()))):
             
@@ -466,7 +468,7 @@ class Application(tk.Tk):
             self.plot(temp_df,self.canvas,repetition)
 
             # Calls function to display the output parameters in the log
-            self.display_log(test_output, self.out_txt, i)
+            #self.display_log(test_output, self.out_txt, i)
             
             # This is if the user wants a pause between multiple scans. Default value is set to 0.
             sleep(float(self.multidelay_box.get()))
