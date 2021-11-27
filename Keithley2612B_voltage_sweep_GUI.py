@@ -462,7 +462,7 @@ class Application(tk.Tk):
             self.plot(temp_df,self.canvas,repetition)
 
             # Calls function to display the output parameters in the log 
-            self.display_log(test_output)
+            self.display_log(test_output, i)
             
             # This is if the user wants a pause between multiple scans. Default value is set to 0.
             sleep(float(self.multidelay_box.get()))
@@ -537,29 +537,30 @@ class Application(tk.Tk):
 
         self.update()
     
-    def display_log(self, output_params):
+
+
+
+    def display_log(self, output_params, rep):
             """
             Function to display parameters in the output log. The log will update automatically with each scan.
             """
             textbox = tk.Text(self.out_log, width = '25', height = '40')
             textbox.grid(sticky = 'n')
 
-            for i in range(len(str(self.pattern_box.get()))):
-        
-                textbox.insert('end', f" Scan {i+1}:\n")
-                textbox.insert('end', "__________\n")
-                textbox.insert('end', f"    Voc: {output_params['Voc (V)']} V\n")
-                textbox.insert('end', f"    Isc: {output_params['Isc (mA)']} mA\n")
-                textbox.insert('end', f"    Jsc: {output_params['Jsc (mA/cm2)']} mA/cm2\n")
-                textbox.insert('end', f"    Imax: {output_params['Imax (mA)']} mA\n")
-                textbox.insert('end', f"    Vmax: {output_params['Vmax (V)']} V\n")
-                textbox.insert('end', f"    Pmax: {output_params['Pmax (mW/cm2)']} mW/cm2\n")
-                textbox.insert('end', f"    FF: {output_params['FF (%)']}%\n")
-                textbox.insert('end', f"    PCE: {output_params['PCE (%))']}%\n")
-                textbox.insert('end', f"    Rseries: {output_params['Rseries (ohm)']} ohm\n")
-                textbox.insert('end', f"    Rshunt: {output_params['Rshunt (ohm)']} ohm\n")
-                textbox.insert('end', "\n")
-                textbox.insert('end', "\n")
+            textbox.insert('end', f" Scan {rep+1}:\n")
+            textbox.insert('end', "__________\n")
+            textbox.insert('end', f"    Voc: {output_params['Voc (V)']} V\n")
+            textbox.insert('end', f"    Isc: {output_params['Isc (mA)']} mA\n")
+            textbox.insert('end', f"    Jsc: {output_params['Jsc (mA/cm2)']} mA/cm2\n")
+            textbox.insert('end', f"    Imax: {output_params['Imax (mA)']} mA\n")
+            textbox.insert('end', f"    Vmax: {output_params['Vmax (V)']} V\n")
+            textbox.insert('end', f"    Pmax: {output_params['Pmax (mW/cm2)']} mW/cm2\n")
+            textbox.insert('end', f"    FF: {output_params['FF (%)']}%\n")
+            textbox.insert('end', f"    PCE: {output_params['PCE (%))']}%\n")
+            textbox.insert('end', f"    Rseries: {output_params['Rseries (ohm)']} ohm\n")
+            textbox.insert('end', f"    Rshunt: {output_params['Rshunt (ohm)']} ohm\n")
+            textbox.insert('end', "\n")
+            textbox.insert('end', "\n")
 
                 
 
