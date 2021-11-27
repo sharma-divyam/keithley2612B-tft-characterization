@@ -50,7 +50,7 @@ class Application(tk.Tk):
         self.xscrollbar_frame.pack(side = 'bottom', fill = 'both', expand = True, anchor = 'n')
 
         # The main canvas contains the sub frame.
-        self.main_canvas = tk.Canvas(self.main_frame, height = 604, width = 1100)
+        self.main_canvas = tk.Canvas(self.main_frame, height = 604, width = 1110)
         self.main_canvas.pack(side= 'left', fill='both', anchor = 'n', expand=True)
 
         # Initializing scrollbars
@@ -274,7 +274,7 @@ class Application(tk.Tk):
         self.out_log = tk.LabelFrame(self.sub_frame, text = "OUTPUT LOG")
         self.out_log.grid (row = 0, column = 2, rowspan = 3, sticky = 'n' )
         
-        self.out_canvas = tk.Canvas (self.out_log, height = 580, width = 200, bg = 'white').grid (row = 0, column = 0, sticky ='n')
+        self.out_canvas = tk.Canvas (self.out_log, height = 580, width = 220, bg = 'white').grid (row = 0, column = 0, sticky ='n')
 
         
 
@@ -426,7 +426,7 @@ class Application(tk.Tk):
 
         # Created text widget for output log
         
-        self.out_txt = tk.Text(self.out_log, width = '25', height = '36')
+        self.out_txt = tk.Text(self.out_log, width = '27', height = '36', bg = 'grey')
         self.out_txt.grid(row = 0, column = 0, sticky = 'n')
         
         
