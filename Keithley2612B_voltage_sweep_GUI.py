@@ -274,6 +274,10 @@ class Application(tk.Tk):
         self.out_log = tk.LabelFrame(self.sub_frame, text = "OUTPUT LOG")
         self.out_log.grid (row = 0, column = 2, rowspan = 3, sticky = 'n' )
         
+        # If you want to change the width of log window, edit the width attribute of the following canvas.
+        # Then go to line 431 and change the width of the textbox to match that of the canvas. You can see the width of the textbox
+        # by giving it a 'bg' colour
+        # Accordingly, change the width of the tkinter window from line 53
         self.out_canvas = tk.Canvas (self.out_log, height = 580, width = 220, bg = 'white').grid (row = 0, column = 0, sticky ='n')
 
         
@@ -426,7 +430,7 @@ class Application(tk.Tk):
 
         # Created text widget for output log
         
-        self.out_txt = tk.Text(self.out_log, width = '27', height = '36', bg = 'grey')
+        self.out_txt = tk.Text(self.out_log, width = '27', height = '36')
         self.out_txt.grid(row = 0, column = 0, sticky = 'n')
         
         
