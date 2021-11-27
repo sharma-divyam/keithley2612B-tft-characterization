@@ -423,6 +423,10 @@ class Application(tk.Tk):
         self.clear_canvas()
 
         print("Pattern is " + str(self.pattern_box.get()))
+
+        # Created text widget for output log
+        self.out_txt = tk.Text(self.out_log, width = '25', height = '40')
+        self.out_txt.grid(sticky = 'n')
         
         for i in range(len(str(self.pattern_box.get()))):
             
@@ -461,8 +465,8 @@ class Application(tk.Tk):
             # Calls the plot function to plot it immediately.
             self.plot(temp_df,self.canvas,repetition)
 
-            # Calls function to display the output parameters in the log 
-            self.display_log(test_output, i)
+            # Calls function to display the output parameters in the log
+            self.display_log(test_output, self.out_txt, i)
             
             # This is if the user wants a pause between multiple scans. Default value is set to 0.
             sleep(float(self.multidelay_box.get()))
@@ -540,14 +544,11 @@ class Application(tk.Tk):
 
 
 
-    def display_log(self, output_params, rep):
+    def display_log(self, output_params, textbox, scan_rep):
             """
             Function to display parameters in the output log. The log will update automatically with each scan.
             """
-            textbox = tk.Text(self.out_log, width = '25', height = '40')
-            textbox.grid(sticky = 'n')
-
-            textbox.insert('end', f" Scan {rep+1}:\n")
+            textbox.insert('end', f" Scan {scan_rep+1}:\n")
             textbox.insert('end', "__________\n")
             textbox.insert('end', f"    Voc: {output_params['Voc (V)']} V\n")
             textbox.insert('end', f"    Isc: {output_params['Isc (mA)']} mA\n")
