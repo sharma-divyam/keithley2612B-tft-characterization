@@ -430,7 +430,7 @@ class Application(tk.Tk):
 
         # Created text widget for output log
         
-        self.out_txt = tk.Text(self.out_log, width = '27', height = '36')
+        self.out_txt = tk.Text(self.out_log, width = '32', height = '36')
         self.out_txt.grid(row = 0, column = 0, sticky = 'n')
         
         
@@ -575,6 +575,8 @@ class Application(tk.Tk):
             textbox.insert('end', f"    Rshunt: {round(output_params['Rshunt (ohm)'], 2)} ohm\n")
             textbox.insert('end', "\n")
             textbox.insert('end', "\n")
+            textbox.see("end")
+
 
                 
 
