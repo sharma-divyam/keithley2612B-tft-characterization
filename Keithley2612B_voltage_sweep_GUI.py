@@ -11,6 +11,13 @@ from time import sleep
 import pandas as pd
 import seaborn as sns
 
+
+# To add new user to the 'Operator Name' dropdown menu:
+#   1.) Press 'Ctrl' + 'F'
+#   2.) Search "usernames"
+#   3.) Look for the line which defines 'self.usernames'
+#   4.) Add new name to the list (within the '[]' brackets) by entering a comma and then "<Name of new user>"
+
 class Application(tk.Tk):
 
     def __init__(self):
@@ -75,15 +82,34 @@ class Application(tk.Tk):
 
         # Operator Name
         self.op_label = tk.Label (self.frame_in_par, text = 'Operator Name:')
-        self.op_label.grid(row =0, sticky = 'w')
-        self.op_name = tk.StringVar(self,"Name")
-        self.op_name_box = tk.Entry (self.frame_in_par, textvariable = self.op_name)
-        self.op_name_box.grid()
+        self.op_label.grid(sticky = 'w')
+        self.op_name = tk.StringVar(self, 'Name')
+        self.usernames = [
+            "Alex",
+            "Anthony",
+            "Anupam",
+            "Benny",
+            "Boyi",
+            "Darrell",
+            "Gautam",
+            "Herlina",
+            "Imran",
+            "Japheth",
+            "Nauwfhal",
+            "Nivethaa",
+            "Thambi",
+            "Yijun",
+            "Zhong Quan",
+            "Zi Sheng"
+            ]
+        self.name_drop = tk.OptionMenu (self.frame_in_par, self.op_name, *self.usernames)
+        self.name_drop.grid()
 
         # Cell Type
         self.type_select = tk.Label (self.frame_in_par, text = "Select type:")
         self.type_select.grid(row=2, sticky = 'w')
         self.celltype = tk.StringVar()
+        self.celltype.set('Spin Coated')
         self.type_option_1 = tk.Radiobutton (self.frame_in_par, text = 'Spin Coated', variable = self.celltype, value = 'Spin Coated',tristatevalue='x')
         self.type_option_1.grid(row = 3, sticky = 'w')
         self.type_option_2 = tk.Radiobutton (self.frame_in_par, text = 'Slot-die small', variable = self.celltype, value = 'Slot-die small',tristatevalue='x')
@@ -101,6 +127,7 @@ class Application(tk.Tk):
         self.measurement_type_select = tk.Label (self.frame_in_par, text = 'Select measurement type:')
         self.measurement_type_select.grid(row = 7, sticky = 'w')
         self.measurement_type = tk.StringVar()
+        self.measurement_type.set ('Normal')
         self.measurement_type_option_1 = tk.Radiobutton (self.frame_in_par, text = 'Normal', variable = self.measurement_type, value = 'Normal',tristatevalue='x')
         self.measurement_type_option_1.grid(row = 8, sticky = 'w')
         self.measurement_type_option_2 = tk.Radiobutton (self.frame_in_par, text = 'Thermal Stability', variable = self.measurement_type, value = 'Thermal Stability',tristatevalue='x')
