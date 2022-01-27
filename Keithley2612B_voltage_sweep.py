@@ -316,10 +316,10 @@ def sweep_operation(smu_id, \
     # If case to separate single scans from multiple scans. Multiple scans will have an extra 1,2,3,4 numeral at the back to show which scan it is
     if len(pattern) > 1:
         # Multiple scans condition
-        filename = sample_id + "-" + direction_long + "-" + bracketed_pce + "-" + "Rep-" +str(loop_no+1) + "-" + datec_name + ".csv"
+        filename = sample_id + "-" + "Rep-" +str(loop_no+1) + "-" + datec_name + '-' + direction_long + "-" + bracketed_pce  +  ".csv"
 
     else:
-        filename = sample_id + "-" + direction_long + "-" + bracketed_pce + "-" + datec_name + ".csv"
+        filename = sample_id + "-" + datec_name + "-" + direction_long + "-" + bracketed_pce +  ".csv"
     
 
 
@@ -368,7 +368,7 @@ def sweep_operation(smu_id, \
                     str(jv_params_errors['Rser']),\
                     str(jv_params_errors['Rshunt']),\
                     '-','-',str(actual_scan_rate_error)],\
-        '-': [np.NAN]*13\
+        
         }
    
    
@@ -391,38 +391,46 @@ def sweep_operation(smu_id, \
         12: ['-','-','-','-','-','-','-','-','-','-']
         }
     """
-    
-    header1_label = ['Operator','Sample_ID','Cell_Type','Temp (degC)','Irradiance (Sun(s))','DateCreated','MinVolt (V)','MaxVolt (V)']
+    header1_info = ['# METADATA']
+    header1_label = ['Operator','Sample_ID','Cell_Type','Measurement_Type','Temp (degC)','Irradiance (Sun(s))','DateCreated','MinVolt (V)','MaxVolt (V)']
     header1_data = [operator,'\''+sample_id,celltype,measurement_type,str(temp),str(irradiance),str(datec),str(min),str(max)]
     
 
-    separator = ['#' for x in range(13)]
+    separator = [' ' for x in range(13)]
     
+    header2_info = ['# CALCULATED JV PARAMETERS']
     header2_label = export_dictionary1['Device_Parameters']
     header2_data = export_dictionary1['Values']
     header2_error = export_dictionary1['Errors']
     
-    
+    header3_info = ['# RAW DATA']
     header3_label = ['Potential (V)','Current (A)','Timestamps']
     
-    newfilename =  str(directory)+"\\"+filename + ".csv"
+    newfilename =  str(directory)+"\\"+filename 
     
-    with open(newfilename,'w',encoding='UTF8') as f:
+    with open(newfilename,'w',encoding='UTF8',newline='') as f:
         
         writer = csv.writer(f)
 
+        writer.writerow(header1_info)
         writer.writerow(header1_label)
         writer.writerow(header1_data)
         writer.writerow(separator)
+        writer.writerow(separator)
+        writer.writerow(separator)
+        writer.writerow(header2_info)
         writer.writerow(header2_label)
         writer.writerow(header2_data)
         writer.writerow(header2_error)
         writer.writerow(separator)
+        writer.writerow(separator)
+        writer.writerow(separator)
+        writer.writerow(header3_info)
         writer.writerow(header3_label)
         
         for i in range(len(voltages)):
             
-            templist = [voltages(i),currents(i),timestamps(i)]
+            templist = [voltages[i],currents[i],timestamps[i]]
             
             writer.writerow(templist)
         
@@ -726,10 +734,12 @@ def calculate_jv_params(data,cell_area,irradiance,min_bound,max_bound):
             isc_result = linregress(isc_calc_voltage,isc_calc_current)
 
             # Collect terms
-            jv_params['Isc'] = isc_result.intercept
-            jv_params_errors['Isc'] = isc_result.intercept_stderr
+
             jv_params['Rshunt'] = -1/isc_result.slope
-            jv_params_errors['Rshunt'] = (isc_result.stderr/isc_result.slope)*jv_params['Rshunt'] # Percentage error
+            jv_params_errors['Rshunt'] = (isc_result.stderr/np.multiply(isc_result.slope,-1))*jv_params['Rshunt'] # Percentage error
+
+            jv_params['Isc'] = np.multiply(isc_result.intercept,1000)
+            jv_params_errors['Isc'] = np.multiply(isc_result.intercept_stderr,1000)
 
     
     ######################################################## FILL FACTOR AND OTHERS ###########################################################
@@ -744,16 +754,21 @@ def calculate_jv_params(data,cell_area,irradiance,min_bound,max_bound):
     # Left here for debugging 
     print("Line 587: " + str(data2))
 
-    jv_params['Jsc'] = np.multiply(jv_params['Isc']/cell_area,1000)
-    jv_params['Pmax'] = data2.iloc[0][3]
+    jv_params['Jsc'] = jv_params['Isc']/cell_area
+
+    # Pmax calculated directly from raw IV curve. current was in A, not mA
+    jv_params['Pmax'] = np.multiply(data2.iloc[0][3],1000)
+    
     jv_params['Vmax'] = data2.iloc[0][1]
-    jv_params['Imax'] = data2.iloc[0][2]
+    
+    # Imax calculated directly from raw IV curve. current was in A, not mA
+    jv_params['Imax'] = np.multiply(data2.iloc[0][2],1000)
 
     # Left here for debugging
-    print("Vmax, Imax, Pmax are " + str([data2.iloc[0][1],data2.iloc[0][2],data2.iloc[0][3]]))
+    #print("Vmax, Imax, Pmax are " + str([data2.iloc[0][1],data2.iloc[0][2],data2.iloc[0][3]]))
 
     jv_params['FF'] = jv_params['Pmax']/(jv_params['Voc']*jv_params['Isc']) * 100
-    jv_params['PCE'] = (jv_params['Pmax']/cell_area)/(irradiance*100) * 100
+    jv_params['PCE'] = (jv_params['Pmax']/cell_area)/(irradiance) * 100
 
     # Uncertainty Propagation
     # Uncertainty for Imax and Vmax taken to be tolerance of instrument

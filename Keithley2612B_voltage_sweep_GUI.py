@@ -465,7 +465,7 @@ class Application(tk.Tk):
             
 
             save_params = [self.directory_box.get(),\
-                            self.op_name_box.get(),\
+                            self.op_name.get(),\
                             self.sample_id_box.get(),\
                             self.measurement_type.get(),\
                             self.celltype.get(),\
@@ -503,10 +503,10 @@ class Application(tk.Tk):
             print(temp_df)
             
             # Calls the plot function to plot it immediately.
-            self.plot(temp_df,self.canvas,repetition)
+            self.plot(temp_df,self.canvas,repetition,i)
 
             # Calls function to display the output parameters in the log
-            self.display_log(test_output, self.out_txt, i)
+            #self.display_log(test_output, self.out_txt, i)
             
             # This is if the user wants a pause between multiple scans. Default value is set to 0.
             sleep(float(self.multidelay_box.get()))
@@ -554,7 +554,7 @@ class Application(tk.Tk):
    
 
 
-    def plot(self,data,canvas,rep):
+    def plot(self,data,canvas,rep_legend,rep_no):
     
         # the figure that will contain the plot
 
@@ -566,7 +566,7 @@ class Application(tk.Tk):
         # Since most of the plotting variables have been declared earlier in the clear.canvas() function, and these variables are object variables,
         # no need to call them here. 
         
-        self.plot1.plot(data['Potential (V)'],data['Current Density (mA/cm2)'],linewidth=3,label=rep)
+        self.plot1.plot(data['Potential (V)'],data['Current Density (mA/cm2)'],linewidth=3,label=rep_legend)
         self.plot1.legend(loc="lower left")
 
     
@@ -579,6 +579,8 @@ class Application(tk.Tk):
         # This is essential, for ensuring that the plot shows right after data is received. Without this update(), for multiple scans, the plot will
         # only appear after all scans are done. With update(), the canvas is updated with each iteration of the loop in start().
 
+        self.display_log(self.dict_data, self.out_txt, rep_no)
+
         self.update()
     
 
@@ -590,16 +592,16 @@ class Application(tk.Tk):
             """
             textbox.insert('end', f" Scan {scan_rep+1}:\n")
             textbox.insert('end', "__________\n")
-            textbox.insert('end', f"    Voc: {round(output_params['Voc (V)'], 2)} V\n")
-            textbox.insert('end', f"    Isc: {round(output_params['Isc (mA)'], 2)} mA\n")
-            textbox.insert('end', f"    Jsc: {round(output_params['Jsc (mA/cm2)'], 2)} mA/cm2\n")
-            textbox.insert('end', f"    Imax: {round(output_params['Imax (mA)'], 2)} mA\n")
-            textbox.insert('end', f"    Vmax: {round(output_params['Vmax (V)'], 2)} V\n")
-            textbox.insert('end', f"    Pmax: {round(output_params['Pmax (mW/cm2)'], 2)} mW/cm2\n")
-            textbox.insert('end', f"    FF: {round(output_params['FF (%)'], 2)}%\n")
-            textbox.insert('end', f"    PCE: {round(output_params['PCE (%)'], 2)}%\n")
-            textbox.insert('end', f"    Rseries: {round(output_params['Rseries (ohm)'], 2)} ohm\n")
-            textbox.insert('end', f"    Rshunt: {round(output_params['Rshunt (ohm)'], 2)} ohm\n")
+            textbox.insert('end', f"    Voc: {np.round(output_params['Voc (V)'], 2)} V\n")
+            textbox.insert('end', f"    Isc: {np.round(output_params['Isc (mA)'], 2)} mA\n")
+            textbox.insert('end', f"    Jsc: {np.round(output_params['Jsc (mA/cm2)'], 2)} mA/cm2\n")
+            textbox.insert('end', f"    Imax: {np.round(output_params['Imax (mA)'], 2)} mA\n")
+            textbox.insert('end', f"    Vmax: {np.round(output_params['Vmax (V)'], 2)} V\n")
+            textbox.insert('end', f"    Pmax: {np.round(output_params['Pmax (mW/cm2)'], 2)} mW/cm2\n")
+            textbox.insert('end', f"    FF: {np.round(output_params['FF (%)'], 2)}%\n")
+            textbox.insert('end', f"    PCE: {np.round(output_params['PCE (%)'], 2)}%\n")
+            textbox.insert('end', f"    Rseries: {np.round(output_params['Rseries (ohm)'], 2)} ohm\n")
+            textbox.insert('end', f"    Rshunt: {np.round(output_params['Rshunt (ohm)'], 2)} ohm\n")
             textbox.insert('end', "\n")
             textbox.insert('end', "\n")
             textbox.see("end")
