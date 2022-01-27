@@ -503,7 +503,7 @@ class Application(tk.Tk):
             print(temp_df)
             
             # Calls the plot function to plot it immediately.
-            self.plot(temp_df,self.canvas,repetition,i)
+            self.plot(temp_df,self.canvas,repetition,i,self.pattern_box.get()[i])
 
             # Calls function to display the output parameters in the log
             #self.display_log(test_output, self.out_txt, i)
@@ -554,7 +554,7 @@ class Application(tk.Tk):
    
 
 
-    def plot(self,data,canvas,rep_legend,rep_no):
+    def plot(self,data,canvas,rep_legend,rep_no,direction):
     
         # the figure that will contain the plot
 
@@ -579,14 +579,14 @@ class Application(tk.Tk):
         # This is essential, for ensuring that the plot shows right after data is received. Without this update(), for multiple scans, the plot will
         # only appear after all scans are done. With update(), the canvas is updated with each iteration of the loop in start().
 
-        self.display_log(self.dict_data, self.out_txt, rep_no)
+        self.display_log(self.dict_data, self.out_txt, rep_no,direction)
 
         self.update()
     
 
 
 
-    def display_log(self, output_params, textbox, scan_rep):
+    def display_log(self, output_params, textbox, scan_rep,direction):
             """
             Function to display parameters in the output log. The log will update automatically with each scan.
             """
@@ -602,6 +602,7 @@ class Application(tk.Tk):
             textbox.insert('end', f"    PCE: {np.round(output_params['PCE (%)'], 2)}%\n")
             textbox.insert('end', f"    Rseries: {np.round(output_params['Rseries (ohm)'], 2)} ohm\n")
             textbox.insert('end', f"    Rshunt: {np.round(output_params['Rshunt (ohm)'], 2)} ohm\n")
+            textbox.insert('end', f"    Direction: {direction}\n")
             textbox.insert('end', "\n")
             textbox.insert('end', "\n")
             textbox.see("end")
