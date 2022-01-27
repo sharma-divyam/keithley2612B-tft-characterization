@@ -228,7 +228,7 @@ class Application(tk.Tk):
         # I chose to make the ResourceManager an object variable as well, so that the actual connection,
         # which is done by another function (selectResource()), need not declare a new ResourceManager just to make the connection.
         # This code will fail if no devices are detected. 
-        """
+        
         self.rm = pyvisa.ResourceManager()
         self.address_list = list(self.rm.list_resources()) # list_resources() gives a tuple, I converted it to a list.
         print("Address list: " + str(self.address_list))
@@ -242,7 +242,7 @@ class Application(tk.Tk):
         self.address_drop.grid(row = 0, column = 1, sticky = 'w')
         
         self.selected_resc.trace('w',self.selectResource)  
-        """
+        
 
         # Check status button
         self.check_status = tk.Button (self.frame_ic, text = 'Show Status', command = lambda: self.show_status())
@@ -466,13 +466,20 @@ class Application(tk.Tk):
             # This is sent to the plot() function to be the label for that line, and will appear in the legend.
             repetition = "Scan " + str(i+1)
 
-            temp_df = pd.DataFrame.from_dict(self.dict_data)
+            print("HERE1")
+
+            #temp_df = pd.DataFrame.from_dict(self.dict_data)
+
+            plottingdict = {'Potential (V)': self.dict_data['Potential (V)'],'Current Density (mA/cm2)':self.dict_data['Current Density (mA/cm2)']}
+            temp_df = pd.DataFrame.from_dict(plottingdict)   
+            print("HERE2")
+            print(temp_df)
             
             # Calls the plot function to plot it immediately.
             self.plot(temp_df,self.canvas,repetition)
 
             # Calls function to display the output parameters in the log
-            #self.display_log(test_output, self.out_txt, i)
+            self.display_log(test_output, self.out_txt, i)
             
             # This is if the user wants a pause between multiple scans. Default value is set to 0.
             sleep(float(self.multidelay_box.get()))
@@ -563,7 +570,7 @@ class Application(tk.Tk):
             textbox.insert('end', f"    Vmax: {output_params['Vmax (V)']} V\n")
             textbox.insert('end', f"    Pmax: {output_params['Pmax (mW/cm2)']} mW/cm2\n")
             textbox.insert('end', f"    FF: {output_params['FF (%)']}%\n")
-            textbox.insert('end', f"    PCE: {output_params['PCE (%))']}%\n")
+            textbox.insert('end', f"    PCE: {output_params['PCE (%)']}%\n")
             textbox.insert('end', f"    Rseries: {output_params['Rseries (ohm)']} ohm\n")
             textbox.insert('end', f"    Rshunt: {output_params['Rshunt (ohm)']} ohm\n")
             textbox.insert('end', "\n")

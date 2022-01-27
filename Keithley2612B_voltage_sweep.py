@@ -400,7 +400,7 @@ def sweep_operation(smu_id, \
 
     #print(combined)
 
-    combined.to_csv(str(directory)+"\\"+filename)
+    combined.to_csv(str(directory)+"\\"+filename,index=False,header=False)
 
     smu_id.write ("smua.nvbuffer1.clear()")
     smu_id.write ("smua.nvbuffer2.clear()")
