@@ -11,6 +11,7 @@ import csv
 import datetime 
 from scipy.stats import linregress
 import pandas as pd
+import csv
 
 #def get_resources():
 #    rm = pyvisa.ResourceManager()
@@ -255,7 +256,7 @@ def sweep_operation(smu_id, \
 
     # Now the same data is transferred to the plotting dictionary. This will be sent to the plotting function.
     plotting_dictionary['Potential (V)'].extend(voltages)
-    plotting_dictionary['Current Density (mA/cm2)'].extend(np.divide(currents,cell_area))
+    plotting_dictionary['Current Density (mA/cm2)'].extend(np.multiply(np.divide(currents,cell_area),1000))
     plotting_dictionary['Scan Rep'].extend([loop_no+1]*steps_no)
 
 
@@ -369,7 +370,9 @@ def sweep_operation(smu_id, \
                     '-','-',str(actual_scan_rate_error)],\
         '-': [np.NAN]*13\
         }
-
+   
+   
+    """
     # Stringformatter (defined below) used to convert voltages, currents, and timestamps into list of strings instead of floats.
     export_dictionary2 = { \
 
@@ -387,7 +390,45 @@ def sweep_operation(smu_id, \
         11: ['-','-','-','-','-','-','-','-','-','-'],\
         12: ['-','-','-','-','-','-','-','-','-','-']
         }
+    """
+    
+    header1_label = ['Operator','Sample_ID','Cell_Type','Temp (degC)','Irradiance (Sun(s))','DateCreated','MinVolt (V)','MaxVolt (V)']
+    header1_data = [operator,'\''+sample_id,celltype,measurement_type,str(temp),str(irradiance),str(datec),str(min),str(max)]
+    
 
+    separator = ['#' for x in range(13)]
+    
+    header2_label = export_dictionary1['Device_Parameters']
+    header2_data = export_dictionary1['Values']
+    header2_error = export_dictionary1['Errors']
+    
+    
+    header3_label = ['Potential (V)','Current (A)','Timestamps']
+    
+    newfilename =  str(directory)+"\\"+filename + ".csv"
+    
+    with open(newfilename,'w',encoding='UTF8') as f:
+        
+        writer = csv.writer(f)
+
+        writer.writerow(header1_label)
+        writer.writerow(header1_data)
+        writer.writerow(separator)
+        writer.writerow(header2_label)
+        writer.writerow(header2_data)
+        writer.writerow(header2_error)
+        writer.writerow(separator)
+        writer.writerow(header3_label)
+        
+        for i in range(len(voltages)):
+            
+            templist = [voltages(i),currents(i),timestamps(i)]
+            
+            writer.writerow(templist)
+        
+        print("CSV file exported.")
+                
+    """
     # Creation of first DataFrame
     export_df1 = pd.DataFrame.from_dict(export_dictionary1,orient='index')
 
@@ -401,6 +442,8 @@ def sweep_operation(smu_id, \
     #print(combined)
 
     combined.to_csv(str(directory)+"\\"+filename,index=False,header=False)
+
+    """
 
     smu_id.write ("smua.nvbuffer1.clear()")
     smu_id.write ("smua.nvbuffer2.clear()")
@@ -701,7 +744,7 @@ def calculate_jv_params(data,cell_area,irradiance,min_bound,max_bound):
     # Left here for debugging 
     print("Line 587: " + str(data2))
 
-    jv_params['Jsc'] = jv_params['Isc']/cell_area
+    jv_params['Jsc'] = np.multiply(jv_params['Isc']/cell_area,1000)
     jv_params['Pmax'] = data2.iloc[0][3]
     jv_params['Vmax'] = data2.iloc[0][1]
     jv_params['Imax'] = data2.iloc[0][2]
