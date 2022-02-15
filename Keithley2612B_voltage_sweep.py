@@ -183,7 +183,7 @@ def sweep_operation(smu_id, \
 
     # Turn on output and run
     smu_id.write ("smua.source.output = smua.OUTPUT_ON")
-    print("Output turned on. Next step is initiate.")
+    print("Output turned on. Next step is initiate. Program will not respond until scan is complete and data is collected from Keithley.")
     smu_id.write ("smua.trigger.initiate()")
 
 
@@ -316,32 +316,13 @@ def sweep_operation(smu_id, \
     # If case to separate single scans from multiple scans. Multiple scans will have an extra 1,2,3,4 numeral at the back to show which scan it is
     if len(pattern) > 1:
         # Multiple scans condition
-        filename = sample_id + "-" + "Rep-" +str(loop_no+1) + "-" + datec_name + '-' + direction_long + "-" + bracketed_pce  +  ".csv"
+        filename = sample_id + "-" + "Rep_" +str(loop_no+1) + "-" + datec_name + '-' + direction_long + "-" + bracketed_pce  +  ".csv"
 
     else:
         filename = sample_id + "-" + datec_name + "-" + direction_long + "-" + bracketed_pce +  ".csv"
     
 
-
-
-    # Formatting the csv file will require two parts. Following the old convention, JV parameters are laid out in rows.
-    # This makes it easier for the others who rely on copy-pasting the cells into Origin/Excel, rather than use code to extract out the data for plotting.
-    # However, due to the limitation of DataFrames, some trickery is required.
-    #
-    # DataFrames allow appending, if the column names are the same. With export_dictionary1, a DataFrame is constructed out of it, but with the key 
-    # as the index rather than column name. The columns will then be numbered [0,1,2,...] unless a column variable is specified. 
-    # (see pandas.DataFrame.from_dict(dict,orient=index))
-    #
-    # With export_dictionary2, the data is best represented vertically, especially since one side of it contains the actual JV graph, and the other side
-    # is the sample data. The keys are named with numbers, so that when converting to DataFrame, the columns are now numbers, and they can match up with 
-    # the DataFrame from export_dictionary1. 
-    #
-    # DataFrames cannot handle unequal matrices though. Therefore the key:pd.Series section pads all empty spaces with np.NAN, such that the overall combined
-    # DataFrame will have 13 full columns and as many rows as needed, with all missing spaces filled with np.NAN. This doees not affect others who use Excel,
-    # where NANs do not show. 
-    #
-    # Finally, DataFrames require homogeneous data type within a column. This is not the case with this csv file. Therefore, everything is converted into
-    # strings. It does not affect the actual csv file; when opening in Excel, for example, the numbers are still recognised as numbers.
+    # CSV file is written line by line to account for the different number of columns.
 
     export_dictionary1 = { \
     
@@ -372,25 +353,6 @@ def sweep_operation(smu_id, \
         }
    
    
-    """
-    # Stringformatter (defined below) used to convert voltages, currents, and timestamps into list of strings instead of floats.
-    export_dictionary2 = { \
-
-        0: ['Potential (V)'] + (string_formatter(voltages)), \
-        1: ['Current (mA)'] + string_formatter(currents), \
-        2: ['Timestamp'] + string_formatter(timestamps), \
-        3: ['-'], \
-        4: ['SampleInfo'] + (['Operator','Sample_ID','Cell_Type','Measurement_Type','Temp','Irradiance','DateCreated','MinVolt','MaxVolt']),\
-        5: ['Values'] + ([operator,'\''+sample_id,celltype,measurement_type,str(temp),str(irradiance),str(datec),str(min),str(max)]),\
-        6: ['Units'] + (['-','-','-','-',"degC","Sun(s)",'-','V','V']), \
-        7: ['-','-','-','-','-','-','-','-','-','-'],\
-        8: ['-','-','-','-','-','-','-','-','-','-'],\
-        9: ['-','-','-','-','-','-','-','-','-','-'],\
-        10: ['-','-','-','-','-','-','-','-','-','-'],\
-        11: ['-','-','-','-','-','-','-','-','-','-'],\
-        12: ['-','-','-','-','-','-','-','-','-','-']
-        }
-    """
     header1_info = ['# METADATA']
     header1_label = ['Operator','Sample_ID','Cell_Type','Measurement_Type','Temp (degC)','Irradiance (Sun(s))','DateCreated','MinVolt (V)','MaxVolt (V)']
     header1_data = [operator,'\''+sample_id,celltype,measurement_type,str(temp),str(irradiance),str(datec),str(min),str(max)]
@@ -435,23 +397,10 @@ def sweep_operation(smu_id, \
             writer.writerow(templist)
         
         print("CSV file exported.")
+        
+    f.close()
                 
-    """
-    # Creation of first DataFrame
-    export_df1 = pd.DataFrame.from_dict(export_dictionary1,orient='index')
 
-    # Creation of second DataFrame
-    export_df2 = pd.DataFrame({ key:pd.Series(value) for key, value in export_dictionary2.items() })
-
-    #print(export_df2)
-
-    combined = export_df1.append(export_df2,ignore_index=True,sort=False)
-
-    #print(combined)
-
-    combined.to_csv(str(directory)+"\\"+filename,index=False,header=False)
-
-    """
 
     smu_id.write ("smua.nvbuffer1.clear()")
     smu_id.write ("smua.nvbuffer2.clear()")

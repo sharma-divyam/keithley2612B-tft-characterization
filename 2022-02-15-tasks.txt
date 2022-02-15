@@ -1,0 +1,20 @@
+Changes
+
+1. Remove sleep from last cycle from multiple scan
+2. Change Rep- to Rep_
+3. Error checking of inputs (except sample name, not done, need regex)
+4. Added oplist function, csv filecreator and csv writer functions for database. 
+5. Created dummy list for instrument control if no instruments detected (pyvisa)
+6. Removed several outdated comments
+ 
+
+Changes Left 
+
+1. Extra radiobuttons ("new materials", "Hysteresis RF", "Hysteresis FR")
+2. Special calculation of hysteresis index to be exported in file
+3. Including the HI, scanpattern, loop number into the database
+4. Stop button to throw exception to at least stop the multiple scans
+5. Need to handle keyboard interrupt. Unlikely to make it restart from where it stopped...
+6. Running the sweep operation on a separate thread so that UI remains active. 
+7. TESTING
+8. ERROR CHECKING REGEX SAMPLE NAME - CANNOT HAVE COLON AND OTHER SYMBOLS

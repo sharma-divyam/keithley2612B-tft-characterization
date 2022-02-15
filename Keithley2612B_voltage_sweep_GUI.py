@@ -43,6 +43,9 @@ class Application(tk.Tk):
         self.canvas = None
         self.plot1 = None
         self.graph_container = None
+        
+        # UPDATE 2022-02-15: Saves the previous sample name, and shows a warning in the log if the name is the same as before.
+        self.old_sample_name = None
 
         ####################################### LAYOUT ####################################################
 
@@ -140,7 +143,7 @@ class Application(tk.Tk):
         # Sample_ID
         self.sample_id_label = tk.Label (self.frame_in_par, text = 'Sample ID:')
         self.sample_id_label.grid(row = 12, sticky = 'w')
-        self.sample_id = tk.StringVar(self,"Example: 1-1")
+        self.sample_id = tk.StringVar(self,"Example")
         self.sample_id_box = tk.Entry (self.frame_in_par, textvariable = self.sample_id)
         self.sample_id_box.grid (row = 12, column = 1, sticky = 'w')
 
@@ -195,7 +198,7 @@ class Application(tk.Tk):
         # Scan Rate
         self.scan_rate_label = tk.Label (self.frame_in_par, text = 'Scan Rate (mV/sec):')
         self.scan_rate_label.grid(row = 23, sticky = 'w')
-        self.scan_rate = tk.DoubleVar(self,500)
+        self.scan_rate = tk.DoubleVar(self,100)
         self.scan_rate_box = tk.Entry (self.frame_in_par, textvariable = self.scan_rate)
         self.scan_rate_box.grid (row = 23, column = 1, sticky = 'w')
 
@@ -254,12 +257,17 @@ class Application(tk.Tk):
         # PyVisa set-up.
         # I chose to make the ResourceManager an object variable as well, so that the actual connection,
         # which is done by another function (selectResource()), need not declare a new ResourceManager just to make the connection.
-        # This code will fail if no devices are detected. 
+        # This code will fail if no devices are detected.
+        # UPDATE 2022-02-15: Code no longer fails if no devices are detected.
         
         self.rm = pyvisa.ResourceManager()
         self.address_list = list(self.rm.list_resources()) # list_resources() gives a tuple, I converted it to a list.
         print("Address list: " + str(self.address_list))
         
+        if not self.address_list:
+            print("No devices found. Random text will be shown in the device menu. Check that device is on, and connections are secure.")
+            self.address_list =('No Device Found','Please check that the device is ON,','Or that it is connected to the computer.')
+
         self.address_select_label = tk.Label (self.frame_ic, text = 'Devices:')
         self.address_select_label.grid(sticky = 'w')
 
@@ -451,67 +459,145 @@ class Application(tk.Tk):
         Hence, the loop is placed here instead.
         """
 
+        # Created text widget for output log
+        # UPDATE 2022-02-15: Brought upwards
+        self.out_txt = tk.Text(self.out_log, width = '32', height = '36')
+        self.out_txt.grid(row = 0, column = 0, sticky = 'n')
+        
+
+
+        # UPDATE 2022-02-15: This parameter will be used to determine if the sweep operation takes place or not.
+        # If the parameters supplied to the textboxes are not okay, then this value is changed to 0.
+        # Sweep executed only if areParametersOkay == 1.
+        
+        areParametersOkay = 1
+
+        # Clears the JV canvas
         self.clear_canvas()
 
         print("Pattern is " + str(self.pattern_box.get()))
 
-        # Created text widget for output log
+        # UPDATE 2022-02-15: CHAIN OF ERROR-CHECKING IFS
+        # Checks if values in boxes make sense. 
         
-        self.out_txt = tk.Text(self.out_log, width = '32', height = '36')
-        self.out_txt.grid(row = 0, column = 0, sticky = 'n')
+        # Regex check for file name to make sure that filename does not have special characters
+        # Throw warning if filename is same as before
         
+        # Check that floats are floats, and integers are integers
+        try:
+            
+            # This is done line-by-line so if an exception is thrown, user can trace back where the problem is.
+            # Here, everything is tested with float, except the number of points, which is tested with integer. 
+            # These letters will not be used in the end.
+            
+            a = float(self.temp_box.get())
+            b = float(self.min_volt_box.get())
+            c = float(self.max_volt_box.get())
+            d = float(self.cell_area_box.get())
+            e = float(self.irr_box.get())
+            f = float(self.curr_lim_box.get())
+            g = float(self.timeout_box.get())
+            j = float(self.scan_rate_box.get())
+            k = int(self.steps_no_box())
+            l = float(self.delay_box.get())
+            
+            
+            # Min and max voltage check to make sure min voltage is smaller than max voltage.
+            # This is done here so that if the voltage box does not contain numerals, then the code never reaches this line.
+            if float(self.min_volt_box.get()) >= float(self.max_volt_box.get()):
+                
+                areParametersOkay = 0
+                self.out_txt.insert('end', "Invalid minimum and maximum voltage. Ensure that Max Volt > Min Volt.\n")
+
+        except TypeError as type_error:
+            
+            areParametersOkay = 0
+            
+            error_str = repr(type_error)
+            self.out_txt.insert('end', "ERROR: Check the numerical values in boxes.\n")
+            self.out_txt.insert('end',"All numeric values should be floating point values,\n")
+            self.out_txt.insert('end','except for number of points, which is an integer.\n')
+            self.out_txt.insert('end','More Info:\n\n')
+            self.out_txt.insert(error_str)
+            
+                    
+
+            
+            
+        # Check directory. Need to see if the get() fails if it is empty.
+        if not self.directory_box.get():
+            
+            areParametersOkay = 0
+            self.out_txt.insert('end', "Directory for file export is not set. Choose a folder to export the data.\n")
+
         
-        for i in range(len(str(self.pattern_box.get()))):
-            
 
-            save_params = [self.directory_box.get(),\
-                            self.op_name.get(),\
-                            self.sample_id_box.get(),\
-                            self.measurement_type.get(),\
-                            self.celltype.get(),\
-                            self.temp_box.get() \
-            ]
+        if areParametersOkay == 1:
+        
+            for i in range(len(str(self.pattern_box.get()))):
+                
 
-            test_output = kvs.sweep_operation(self.smu, \
-                                                int(self.steps_no_box.get()), \
-                                                self.pattern_box.get(), \
-                                                int(self.delay_box.get()), \
-                                                float(self.min_volt_box.get()), \
-                                                float(self.max_volt_box.get()), \
-                                                float(self.scan_rate_box.get()),\
-                                                i,\
-                                                float(self.cell_area_box.get()),\
-                                                float(self.irr_box.get()),\
-                                                float(self.curr_lim_box.get()),\
-                                                save_params,\
-                                                float(self.timeout_box.get())\
-            )
-            
-            # Receive the data and set it as an object variable.
-            self.dict_data = test_output
+                save_params = [self.directory_box.get(),\
+                                self.op_name.get(),\
+                                self.sample_id_box.get(),\
+                                self.measurement_type.get(),\
+                                self.celltype.get(),\
+                                self.temp_box.get() \
+                ]
 
-            # This is sent to the plot() function to be the label for that line, and will appear in the legend.
-            repetition = "Scan " + str(i+1)
+                test_output = kvs.sweep_operation(self.smu, \
+                                                    int(self.steps_no_box.get()), \
+                                                    self.pattern_box.get(), \
+                                                    int(self.delay_box.get()), \
+                                                    float(self.min_volt_box.get()), \
+                                                    float(self.max_volt_box.get()), \
+                                                    float(self.scan_rate_box.get()),\
+                                                    i,\
+                                                    float(self.cell_area_box.get()),\
+                                                    float(self.irr_box.get()),\
+                                                    float(self.curr_lim_box.get()),\
+                                                    save_params,\
+                                                    float(self.timeout_box.get())\
+                )
+                
+                # Receive the data and set it as an object variable.
+                self.dict_data = test_output
+                
+                print("Data collected.")
 
-            print("HERE1")
-
-            #temp_df = pd.DataFrame.from_dict(self.dict_data)
-
-            plottingdict = {'Potential (V)': self.dict_data['Potential (V)'],'Current Density (mA/cm2)':self.dict_data['Current Density (mA/cm2)']}
-            temp_df = pd.DataFrame.from_dict(plottingdict)   
-            print("HERE2")
-            print(temp_df)
-            
-            # Calls the plot function to plot it immediately.
-            self.plot(temp_df,self.canvas,repetition,i,self.pattern_box.get()[i])
-
-            # Calls function to display the output parameters in the log
-            #self.display_log(test_output, self.out_txt, i)
-            
-            # This is if the user wants a pause between multiple scans. Default value is set to 0.
-            sleep(float(self.multidelay_box.get()))
+                # This is sent to the plot() function to be the label for that line, and will appear in the legend.
+                repetition = "Scan " + str(i+1)
 
 
+                #temp_df = pd.DataFrame.from_dict(self.dict_data)
+
+                plottingdict = {'Potential (V)': self.dict_data['Potential (V)'],'Current Density (mA/cm2)':self.dict_data['Current Density (mA/cm2)']}
+                temp_df = pd.DataFrame.from_dict(plottingdict)   
+                print("DataFrame obtained for scan. Plotting...")
+                print(temp_df)
+                
+                # Calls the plot function to plot it immediately.
+                self.plot(temp_df,self.canvas,repetition,i,self.pattern_box.get()[i])
+
+                print("Plotting complete for current scan.")
+
+                # Calls function to display the output parameters in the log
+                #self.display_log(test_output, self.out_txt, i)
+                
+                # This is if the user wants a pause between multiple scans. Default value is set to 0.
+                
+                
+                # UPDATE 2022-02-15: Check if already on last scan. If on last scan, then no need to sleep.
+                if i == len(str(self.pattern_box.get())) - 1:
+                    print("Experiment completed.")
+                else:
+                    print("Sleeping for " + self.multidelay_box + " seconds. Program will not respond in this state.")
+                    sleep(float(self.multidelay_box.get()))
+                    print("Sleep done.")
+
+
+        else:
+            pass
 
     def stop(self):
         
@@ -521,6 +607,9 @@ class Application(tk.Tk):
         (Does not seem to work. The Keithley only responds to several commands while it is scanning, and in any case,
         this program sleeps while waiting for the data from Keithley, so the program freezes while scanning. Threading likely
         required for such functionality)
+        
+        UPDATE 2022-02-15: This stops the scans if multiple scans are used. 
+        
         """
 
         kvs.stop_scan(self.smu)
