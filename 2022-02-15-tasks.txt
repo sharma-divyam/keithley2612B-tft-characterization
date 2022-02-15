@@ -18,3 +18,4 @@ Changes Left
 6. Running the sweep operation on a separate thread so that UI remains active. 
 7. TESTING
 8. ERROR CHECKING REGEX SAMPLE NAME - CANNOT HAVE COLON AND OTHER SYMBOLS
+9. Check sample name with previous sample name, and warn users that they are the same. Either just continue after warning, or show a dialog box and offer the user the chance to abort the start(). 
