@@ -60,7 +60,7 @@ class Application(tk.Tk):
         self.xscrollbar_frame.pack(side = 'bottom', fill = 'both', expand = True, anchor = 'n')
 
         # The main canvas contains the sub frame.
-        self.main_canvas = tk.Canvas(self.main_frame, height = 604, width = 1110)
+        self.main_canvas = tk.Canvas(self.main_frame, height = 675, width = 1110)
         self.main_canvas.pack(side= 'left', fill='both', anchor = 'n', expand=True)
 
         # Initializing scrollbars
@@ -172,79 +172,90 @@ class Application(tk.Tk):
         self.scan_dir_select = tk.Label (self.frame_in_par, text = 'Scan direction/ Pattern:' )
         self.scan_dir_select.grid(row = 16, sticky = 'w')
         self.scan_dir = tk.StringVar()
-        self.scan_dir_option_1 = tk.Radiobutton (self.frame_in_par, text = 'Forward', variable = self.scan_dir, value = 'f',tristatevalue='x')
+        self.scan_dir_option_1 = tk.Radiobutton (self.frame_in_par, text = 'Forward', variable = self.scan_dir, value = 'f',tristatevalue='x', command = self.disable_pattern_box)
         self.scan_dir_option_1.grid(row = 17, sticky = 'w')
-        self.scan_dir_option_2 = tk.Radiobutton (self.frame_in_par, text = 'Reverse', variable = self.scan_dir, value = 'r',tristatevalue='x')
+        self.scan_dir_option_2 = tk.Radiobutton (self.frame_in_par, text = 'Reverse', variable = self.scan_dir, value = 'r',tristatevalue='x', command = self.disable_pattern_box)
         self.scan_dir_option_2.grid(row = 18, sticky = 'w')
-        self.scan_dir_option_3 = tk.Radiobutton (self.frame_in_par, text = 'Pattern', variable = self.scan_dir, value = 'p',tristatevalue='x')
+
+        self.scan_dir_option_3 = tk.Radiobutton (self.frame_in_par, text = 'Hysteresis (F->R)', variable = self.scan_dir, value = 'fr',tristatevalue='x', command = self.disable_pattern_box)
         self.scan_dir_option_3.grid(row = 19, sticky = 'w')
+
+
+        self.scan_dir_option_4 = tk.Radiobutton (self.frame_in_par, text = 'Hysteresis (R->F)', variable = self.scan_dir, value = 'rf',tristatevalue='x', command = self.disable_pattern_box)
+        self.scan_dir_option_4.grid(row = 20, sticky = 'w')
+
+        self.scan_dir_option_5 = tk.Radiobutton (self.frame_in_par, text = 'Pattern', variable = self.scan_dir, value = 'p',tristatevalue='x', command = self.enable_pattern_box)
+        self.scan_dir_option_5.grid(row = 21, sticky = 'w')
         self.pattern_entry = tk.StringVar(self,"Enter Direction Here.")
 
         # Trace keeps track of the radio button selected. Try this out and check the logs.
         self.scan_dir.trace('w',self.configure_pattern)
 
 
+
         self.pattern_box = tk.Entry (self.frame_in_par, textvariable = self.pattern_entry)
-        self.pattern_box.grid (row = 19, column = 1, sticky = 'w')
+        if self.pattern_entry.get() == 'f' or self.pattern_entry.get() == 'r' or self.pattern_entry.get() == 'fr' or self.pattern_entry.get() == 'rf':
+            self.pattern_box.config(state = 'disabled')
+        self.pattern_box.grid (row = 21, column = 1, sticky = 'w')
 
 
         # Cell Area
         self.cell_area_label = tk.Label (self.frame_in_par, text = 'Cell Area (sq. cm):')
-        self.cell_area_label.grid(row = 21, sticky = 'w')
+        self.cell_area_label.grid(row = 23, sticky = 'w')
         self.cell_area = tk.DoubleVar(self,0.09)
         self.cell_area_box = tk.Entry (self.frame_in_par, textvariable = self.cell_area)
-        self.cell_area_box.grid (row = 21, column = 1, sticky = 'w')
+        self.cell_area_box.grid (row = 23, column = 1, sticky = 'w')
 
         # Scan Rate
         self.scan_rate_label = tk.Label (self.frame_in_par, text = 'Scan Rate (mV/sec):')
-        self.scan_rate_label.grid(row = 23, sticky = 'w')
+        self.scan_rate_label.grid(row = 25, sticky = 'w')
         self.scan_rate = tk.DoubleVar(self,100)
         self.scan_rate_box = tk.Entry (self.frame_in_par, textvariable = self.scan_rate)
-        self.scan_rate_box.grid (row = 23, column = 1, sticky = 'w')
+        self.scan_rate_box.grid (row = 25, column = 1, sticky = 'w')
 
         # Irradiance
         self.irr_label = tk.Label (self.frame_in_par, text = 'Irradiance (Suns):')
-        self.irr_label.grid(row = 25, sticky = 'w')
+        self.irr_label.grid(row = 27, sticky = 'w')
         self.irr = tk.DoubleVar(self, 1)
         self.irr_box = tk.Entry (self.frame_in_par, textvariable = self.irr)
-        self.irr_box.grid (row = 25, column = 1, sticky = 'w')
+        self.irr_box.grid (row = 27, column = 1, sticky = 'w')
 
         # Temperature
         self.temp_label = tk.Label (self.frame_in_par, text = 'Temperature (C):')
-        self.temp_label.grid(row = 27, sticky = 'w')
+        self.temp_label.grid(row = 29, sticky = 'w')
         self.temp = tk.DoubleVar(self, 25)
         self.temp_box = tk.Entry (self.frame_in_par, textvariable = self.temp)
-        self.temp_box.grid (row = 27, column = 1, sticky = 'w')
+        self.temp_box.grid (row = 29, column = 1, sticky = 'w')
 
         # Current compliance
         self.curr_lim_label = tk.Label (self.frame_in_par, text = 'Current Limit (mA):')
-        self.curr_lim_label.grid(row = 29, sticky = 'w')
+        self.curr_lim_label.grid(row = 31, sticky = 'w')
         self.curr_lim = tk.DoubleVar(self,60)
         self.curr_lim_box = tk.Entry (self.frame_in_par, textvariable = self.curr_lim)
-        self.curr_lim_box.grid (row = 29, column = 1, sticky = 'w')
+        self.curr_lim_box.grid (row = 31, column = 1, sticky = 'w')
 
         # NPLC DELAY 
         self.delay_label = tk.Label (self.frame_in_par, text = 'NPLC:')
-        self.delay_label.grid(row = 31, sticky = 'w')
+        self.delay_label.grid(row = 33, sticky = 'w')
         self.delay = tk.DoubleVar(self,1)
         self.delay_box = tk.Entry (self.frame_in_par, textvariable = self.delay)
-        self.delay_box.grid (row = 31, column = 1, sticky = 'w')
+        self.delay_box.grid (row = 33, column = 1, sticky = 'w')
 
         # DELAY PER SCAN (FOR MULTIPLE SCANS) 
         self.multidelay_label = tk.Label (self.frame_in_par, text = 'Delay per scan (s):')
-        self.multidelay_label.grid(row = 32, sticky = 'w')
+        self.multidelay_label.grid(row = 34, sticky = 'w')
         self.multidelay = tk.DoubleVar(self,0)
         self.multidelay_box = tk.Entry (self.frame_in_par, textvariable = self.multidelay)
-        self.multidelay_box.grid (row = 32, column = 1, sticky = 'w')
+        self.multidelay_box.grid (row = 34, column = 1, sticky = 'w')
 
         # Directory. I changed it to a button to choose the directory. 
         # Auto-saving of data is preferred, and it saves time with the whole scanning process
         # For the same reason in the Keithley py file, the filename is automatically created. 
         self.savedir = tk.Button (self.frame_in_par, text = 'Choose Save Location', command = lambda: self.getDirectory())
-        self.savedir.grid(row = 33, sticky = 'w')
+        self.savedir.grid(row = 35, sticky = 'w')
         self.directory_fill = tk.StringVar()
         self.directory_box = tk.Entry (self.frame_in_par, textvariable = self.directory_fill)
-        self.directory_box.grid (row = 33, column = 1, sticky = 'w')
+        self.directory_box.grid (row = 35, column = 1, sticky = 'w')
         self.directory_fill.trace('w',self.directory_fill_setter)
 
         #self.clear_button = Button (self.frame_jv, text = 'CLEAR', command = lambda:self.clear_canvas())
@@ -274,6 +285,7 @@ class Application(tk.Tk):
         # selected_resc will change when an option in the OptionMenu is clicked. This click is tracked by the trace function below.
         self.selected_resc = tk.StringVar()
         self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.address_list)
+        self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.random)
         self.address_drop.grid(row = 0, column = 1, sticky = 'w')
         
         self.selected_resc.trace('w',self.selectResource)  
@@ -313,7 +325,7 @@ class Application(tk.Tk):
         # Then go to line 431 and change the width of the textbox to match that of the canvas. You can see the width of the textbox
         # by giving it a 'bg' colour
         # Accordingly, change the width of the tkinter window from line 53
-        self.out_canvas = tk.Canvas (self.out_log, height = 580, width = 220, bg = 'white').grid (row = 0, column = 0, sticky ='n')
+        self.out_canvas = tk.Canvas (self.out_log, height = 643, width = 220, bg = 'white').grid (row = 0, column = 0, sticky ='n')
 
         
 
@@ -399,7 +411,7 @@ class Application(tk.Tk):
         print("Collected pattern is: " + collected_pattern)
 
         if collected_pattern == 'f':
-            pattern = 'f'
+            self.pattern = 'f'
             print("Reached 83")
             self.pattern_entry.set('f')
             #pattern_box = Entry (frame_in_par, textvariable = pattern_entry)
@@ -407,17 +419,28 @@ class Application(tk.Tk):
             a = 1
 
         elif collected_pattern == 'r':
-            pattern = 'r'
+            self.pattern = 'r'
             print("Reached 88")
             self.pattern_entry.set('r')
             #pattern_box = Entry (frame_in_par, textvariable = pattern_entry)
             #pattern_box.grid (row = 19, column = 1, sticky = 'w')
             a = 2
+
+        elif collected_pattern == 'fr':
+            self.pattern = 'h'
+            self.pattern_entry.set ('fr')
+            a = 3
+
+        elif collected_pattern == 'rf':
+            self.pattern = 'h'
+            self.pattern_entry.set ('rf')
+            a = 4
+            
         else:
             self.pattern_entry.set("Enter pattern here.")
             #pattern_box = Entry (frame_in_par, textvariable = pattern_entry)
             #pattern_box.grid (row = 19, column = 1, sticky = 'w')
-            a = 3
+            a = 5
         
         return a
         
@@ -695,6 +718,15 @@ class Application(tk.Tk):
             textbox.insert('end', "\n")
             textbox.insert('end', "\n")
             textbox.see("end")
+
+    def disable_pattern_box(self):
+        self.pattern_box.configure(state="disabled")
+        self.pattern_box.update()
+
+    def enable_pattern_box(self):
+        self.pattern_box.configure(state="normal")
+        self.pattern_box.update()
+
 
 
                 
