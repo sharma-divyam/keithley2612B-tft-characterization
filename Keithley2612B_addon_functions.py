@@ -3,41 +3,6 @@ import datetime
 import os
 import csv
 
-def oplist_getter():
-    
-    """
-    Function to extract out user data from a text file.
-
-    This function will look for a .txt file in a specific location. The .txt file is meant to contain:
-
-    1) The path for the database which will contain everyone's data.
-    2) The list of operators
-
-
-    This .txt file will be stored in a central location (C:\Windows). This path can be freely changed.
-
-    In the text file, the first line is the path, and the rest of the lines are for operators. They should be separated by the newline character.
-
-    e.g. 
-
-    C:\\Windows\\JV_Scanner --> Path to database
-    Person1 --> List of operators
-    Person2
-    ...
-
-    """
-
-    # Import the new list as a dataframe. \t is used as the delimiter since it is a Notepad txt file.
-    # Expected output is a single column
-
-    op_df = pd.read_csv("C:\\Windows\\JV_Scanner\\oplist.txt",sep='\t',engine='python',header=None)
-
-    # Get the relevant data and export as a single list.
-
-    op_list = op_df[0].tolist()
-
-    return op_list
-
 
 def csv_file_handler(filepath):
     
@@ -89,10 +54,10 @@ def csv_file_handler(filepath):
         # HYSTERESIS INDEX, LOOP NUMBER, SCAN_PATTERN are all included.
         
         # Create new csv file.
-        with open(fullname,'a',encoding='UTF8',newline='') as g:
+        g = open(fullname,'a',encoding='UTF8',newline='')
             
-            writer = csv.writer(g)
-            writer.writerow(header)
+        writer = csv.writer(g)
+        writer.writerow(header)
         
     else: 
         
