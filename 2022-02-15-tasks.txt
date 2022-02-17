@@ -6,16 +6,14 @@ Changes
 4. Added oplist function, csv filecreator and csv writer functions for database. 
 5. Created dummy list for instrument control if no instruments detected (pyvisa)
 6. Removed several outdated comments
+7. Extra radiobuttons ("new materials", "Hysteresis RF", "Hysteresis FR")
+8. Special calculation of hysteresis index to be exported in file
+9. Including the HI, scanpattern, loop number into the database
  
 
 Changes Left 
 
-1. Extra radiobuttons ("new materials", "Hysteresis RF", "Hysteresis FR")
-2. Special calculation of hysteresis index to be exported in file
-3. Including the HI, scanpattern, loop number into the database
-4. Stop button to throw exception to at least stop the multiple scans
-5. Need to handle keyboard interrupt. Unlikely to make it restart from where it stopped...
-6. Running the sweep operation on a separate thread so that UI remains active. 
-7. TESTING
-8. ERROR CHECKING REGEX SAMPLE NAME - CANNOT HAVE COLON AND OTHER SYMBOLS
-9. Check sample name with previous sample name, and warn users that they are the same. Either just continue after warning, or show a dialog box and offer the user the chance to abort the start(). 
+- Stop button to throw exception to at least stop the multiple scans & Running the sweep operation on a separate thread/process
+- Need to handle keyboard interrupt. Unlikely to make it restart from where it stopped...
+- ERROR CHECKING REGEX SAMPLE NAME - CANNOT HAVE COLON AND OTHER SYMBOLS
+- Check sample name with previous sample name, and warn users that they are the same. Either just continue after warning, or show a dialog box and offer the user the chance to abort the start(). 
