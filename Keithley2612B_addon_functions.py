@@ -81,7 +81,7 @@ def csv_file_handler(filepath):
     # Check if csv file exists
     if os.path.isfile(fullname) == False:
         
-        header = ['Operator','Sample_ID','Cell_Type','Measurement_Type','Temp (degC)','Irradiance (Sun(s))','DateCreated','MinVolt (V)','MaxVolt (V)','Loop Number','ScanPattern',\
+        header = ['Operator','Sample_ID','Cell_Type','Measurement_Type','Temp (degC)','Irradiance (Sun(s))','DateCreated','MinVolt (V)','MaxVolt (V)','ScanPattern','LoopNumber',\
             'Voc (V)','Isc (mA)','Jsc (mA/cm2)','Imax (mA)','Vmax (V)','Pmax (mW/cm2)','FF (%)','PCE (%)','Rseries (ohm)','Rshunt (ohm)','CellArea (cm2)','ScanRate (mV/s)','ActualScanRate (mV/s)','HysteresisIndex (%)'\
             'ErrorVoc (V)','ErrorIsc (mA)','ErrorJsc (mA/cm2)','ErrorImax (mA)','ErrorVmax (V)','ErrorPmax (mW/cm2)','ErrorFF (%)','ErrorPCE (%)','ErrorRseries (ohm)','ErrorRshunt (ohm)','ErrorCellArea (cm2)','ErrorScanRate (mV/s)','ErrorActualScanRate (mV/s)','ErrorHysteresisIndex (%)',\
             'Voltages (V)', 'Currents (A)','Timestamps (s)']
@@ -103,7 +103,7 @@ def csv_file_handler(filepath):
     return g
 
 
-def export_to_database(saveparams,jvparams,jvparams_errors,voltages_raw,currents_raw,timestamps_raw,filepath):
+def export_to_database(metadata,jv_calculated_data,jv_calculated_data_errors,voltages_raw,currents_raw,timestamps_raw,filepath):
     
     handle = csv_file_handler(filepath)
     writer = csv.writer(handle)
@@ -132,11 +132,23 @@ def export_to_database(saveparams,jvparams,jvparams_errors,voltages_raw,currents
     
     # Saveparams, jvparams, jvparams_errors are all lists, so just need to append the stringvoltage and the other two; this entire row can then be written to the csv file.
     
-    combined = saveparams + jvparams + jvparams_errors # CHECK DIMENSION IS CORRECT!!!
+    combined = metadata + jv_calculated_data + jv_calculated_data_errors # CHECK DIMENSION IS CORRECT!!!
     combined.extend([stringvoltage,stringcurrent,stringtimestamps])
     
     writer.writerow(combined)
     print("Data saved in database")
     handle.close()
     print("Handle to database closed.")
+    
+def stop_multiple_scan():
+    
+    """
+    Stops the multiple scans when clicked.
+    This does not stop the Keithley from finishing its current run.
+    
+    This will kill the sweep operation thread, but will wait for the Keithley to finish its scan if it is performing the scan, hence the need for the OPC? querying
+    
+    """
+    pass
+    
     

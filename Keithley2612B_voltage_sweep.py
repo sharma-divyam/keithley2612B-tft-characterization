@@ -12,6 +12,7 @@ import datetime
 from scipy.stats import linregress
 import pandas as pd
 import csv
+import Keithley2612B_addon_functions as newfunctions
 
 #def get_resources():
 #    rm = pyvisa.ResourceManager()
@@ -80,7 +81,9 @@ def sweep_operation(smu_id, \
                     irradiance,\
                     current_limit,\
                     save_params,\
-                    timeout):
+                    timeout,\
+                    previous_pce,\
+                    databasepath):
 
     smu_id.timeout = timeout
 
@@ -117,7 +120,7 @@ def sweep_operation(smu_id, \
     #smu_id.write (f"smua.measure.nplc = {nplc}")
     
     # Dictionary to contain the data for plotting. 
-    plotting_dictionary = {'Potential (V)':[],'Current Density (mA/cm2)':[],'Scan Rep':[], 'Voc (V)':[],'Isc (mA)':[],'Jsc (mA/cm2)':[],'Imax (mA)':[],'Vmax (V)':[],'Pmax (mW/cm2)':[],'FF (%)':[],'PCE (%)':[],'Rseries (ohm)':[],'Rshunt (ohm)':[]}
+    plotting_dictionary = {'Potential (V)':[],'Current Density (mA/cm2)':[],'Scan Rep':[], 'Voc (V)':[],'Isc (mA)':[],'Jsc (mA/cm2)':[],'Imax (mA)':[],'Vmax (V)':[],'Pmax (mW/cm2)':[],'FF (%)':[],'PCE (%)':[],'Rseries (ohm)':[],'Rshunt (ohm)':[],'Hysteresis Index (%)':[]}
     
 
 
@@ -279,6 +282,19 @@ def sweep_operation(smu_id, \
     plotting_dictionary['PCE (%)'].append(jv_params['PCE'])
     plotting_dictionary['Rseries (ohm)'].append(jv_params['Rser'])
     plotting_dictionary['Rshunt (ohm)'].append(jv_params['Rshunt'])
+    
+    ################################### HYSTERESIS CALCULATION CODE ###############################################
+    
+    # Update 2022-02-17
+    # With new radiobuttons hysteresis F->R and R->F, calculates the hysteresis
+    # In this function, if the sweep_operation function receives a value for previous_pce, then it will calculate
+    # the hysteresis index. If not, then np.nan will be exported. 
+    
+    hys_index = calculate_hysteresis(previous_pce,jv_params['PCE'])
+    plotting_dictionary['Hysteresis Index (%)'].append(hys_index)
+    
+    
+    
 
     ##################################### FILE SAVING AND CSV FORMATTING CODE #####################################
 
@@ -326,7 +342,7 @@ def sweep_operation(smu_id, \
 
     export_dictionary1 = { \
     
-        'Device_Parameters':['Voc (V)','Isc (mA)','Jsc (mA/cm2)','Imax (mA)','Vmax (V)','Pmax (mW/cm2)','FF (%)','PCE (%)','Rseries (ohm)','Rshunt (ohm)','CellArea (cm2)','ScanRate (mV/s)','ActualScanRate (mV/s)'], \
+        'Device_Parameters':['Voc (V)','Isc (mA)','Jsc (mA/cm2)','Imax (mA)','Vmax (V)','Pmax (mW/cm2)','FF (%)','PCE (%)','Rseries (ohm)','Rshunt (ohm)','CellArea (cm2)','ScanRate (mV/s)','ActualScanRate (mV/s)','HysteresisIndex (%)'], \
         'Values': [str(jv_params['Voc']),\
                     str(jv_params['Isc']),\
                     str(jv_params['Jsc']),\
@@ -337,7 +353,8 @@ def sweep_operation(smu_id, \
                     str(jv_params['PCE']),\
                     str(jv_params['Rser']),\
                     str(jv_params['Rshunt']),\
-                    str(cell_area),str(scan_rate),str(actual_scan_rate)], \
+                    str(cell_area),str(scan_rate),str(actual_scan_rate), \
+                    str(hys_index)],\
         'Errors': [str(jv_params_errors['Voc']),\
                     str(jv_params_errors['Isc']),\
                     str(jv_params_errors['Jsc']),\
@@ -348,14 +365,15 @@ def sweep_operation(smu_id, \
                     str(jv_params_errors['PCE']),\
                     str(jv_params_errors['Rser']),\
                     str(jv_params_errors['Rshunt']),\
-                    '-','-',str(actual_scan_rate_error)],\
+                    '-','-',str(actual_scan_rate_error),
+                    '-']\
         
         }
    
    
     header1_info = ['# METADATA']
-    header1_label = ['Operator','Sample_ID','Cell_Type','Measurement_Type','Temp (degC)','Irradiance (Sun(s))','DateCreated','MinVolt (V)','MaxVolt (V)']
-    header1_data = [operator,'\''+sample_id,celltype,measurement_type,str(temp),str(irradiance),str(datec),str(min),str(max)]
+    header1_label = ['Operator','Sample_ID','Cell_Type','Measurement_Type','Temp (degC)','Irradiance (Sun(s))','DateCreated','MinVolt (V)','MaxVolt (V)','ScanPattern','LoopNumber']
+    header1_data = [operator,'\''+sample_id,celltype,measurement_type,str(temp),str(irradiance),str(datec),str(min),str(max),pattern,str(loop_no)]
     
 
     separator = [' ' for x in range(13)]
@@ -399,8 +417,12 @@ def sweep_operation(smu_id, \
         print("CSV file exported.")
         
     f.close()
-                
 
+    ####################################### EXPORT THE DATA TO THE DATABASE ###########################################
+    # UPDATE 2022-02-17: Include the update to database code
+    
+    newfunctions.export_to_database(header1_data,export_dictionary1['Values'],export_dictionary1['Errors'],voltages,currents,timestamps,databasepath)
+    print("Data exported to dataabase.")
 
     smu_id.write ("smua.nvbuffer1.clear()")
     smu_id.write ("smua.nvbuffer2.clear()")
@@ -768,3 +790,22 @@ def string_formatter(listdata):
     formattedStr = ['{:.4f}'.format(x) for x in listdata]
 
     return formattedStr
+
+def calculate_hysteresis(previous_pce,current_pce):
+    
+    """
+    Calculates the hysteresis index provided the previous PCE is given to the sweep_operation function.
+    This is controlled from the GUI.
+    If hysteresis option is not selected, or if doing the first scan of the hysteresis option, then the PCE value will be np.nan. This function then returns np.nan.
+    Otherwise, it returns the hysteresis index.
+    """
+    
+    if np.isnan(previous_pce):
+        
+        return np.nan
+    
+    else:
+        
+        hys = (previous_pce - current_pce)/previous_pce *100
+        return hys
+    
