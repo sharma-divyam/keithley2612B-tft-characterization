@@ -88,24 +88,10 @@ class Application(tk.Tk):
         self.op_label = tk.Label (self.frame_in_par, text = 'Operator Name:')
         self.op_label.grid(sticky = 'w')
         self.op_name = tk.StringVar(self, 'Name')
-        self.usernames = [
-            "Alex",
-            "Anthony",
-            "Anupam",
-            "Benny",
-            "Boyi",
-            "Darrell",
-            "Gautam",
-            "Herlina",
-            "Imran",
-            "Japheth",
-            "Nauwfhal",
-            "Nivethaa",
-            "Thambi",
-            "Yijun",
-            "Zhong Quan",
-            "Zi Sheng"
-            ]
+        self.usernames = []
+        with open('Usernames.txt') as f:
+            self.usernames = f.readlines()
+        
         self.name_drop = tk.OptionMenu (self.frame_in_par, self.op_name, *self.usernames)
         self.name_drop.grid()
 
