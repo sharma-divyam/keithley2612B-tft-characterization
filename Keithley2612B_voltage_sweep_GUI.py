@@ -43,6 +43,7 @@ class Application(tk.Tk):
         self.canvas = None
         self.plot1 = None
         self.graph_container = None
+        self.pattern = None
         
         # UPDATE 2022-02-15: Saves the previous sample name, and shows a warning in the log if the name is the same as before.
         self.old_sample_name = None
@@ -437,6 +438,7 @@ class Application(tk.Tk):
             a = 4
             
         else:
+            self.pattern = 'p'
             self.pattern_entry.set("Enter pattern here.")
             #pattern_box = Entry (frame_in_par, textvariable = pattern_entry)
             #pattern_box.grid (row = 19, column = 1, sticky = 'w')
@@ -557,66 +559,71 @@ class Application(tk.Tk):
 
         if areParametersOkay == 1:
         
-            for i in range(len(str(self.pattern_box.get()))):
-                
+            if self.pattern == 'a':
+                pass
+            
+            else:
+        
+                for i in range(len(str(self.pattern_box.get()))):
+                    
 
-                save_params = [self.directory_box.get(),\
-                                self.op_name.get(),\
-                                self.sample_id_box.get(),\
-                                self.measurement_type.get(),\
-                                self.celltype.get(),\
-                                self.temp_box.get() \
-                ]
+                    save_params = [self.directory_box.get(),\
+                                    self.op_name.get(),\
+                                    self.sample_id_box.get(),\
+                                    self.measurement_type.get(),\
+                                    self.celltype.get(),\
+                                    self.temp_box.get() \
+                    ]
 
-                test_output = kvs.sweep_operation(self.smu, \
-                                                    int(self.steps_no_box.get()), \
-                                                    self.pattern_box.get(), \
-                                                    int(self.delay_box.get()), \
-                                                    float(self.min_volt_box.get()), \
-                                                    float(self.max_volt_box.get()), \
-                                                    float(self.scan_rate_box.get()),\
-                                                    i,\
-                                                    float(self.cell_area_box.get()),\
-                                                    float(self.irr_box.get()),\
-                                                    float(self.curr_lim_box.get()),\
-                                                    save_params,\
-                                                    float(self.timeout_box.get())\
-                )
-                
-                # Receive the data and set it as an object variable.
-                self.dict_data = test_output
-                
-                print("Data collected.")
+                    test_output = kvs.sweep_operation(self.smu, \
+                                                        int(self.steps_no_box.get()), \
+                                                        self.pattern_box.get(), \
+                                                        int(self.delay_box.get()), \
+                                                        float(self.min_volt_box.get()), \
+                                                        float(self.max_volt_box.get()), \
+                                                        float(self.scan_rate_box.get()),\
+                                                        i,\
+                                                        float(self.cell_area_box.get()),\
+                                                        float(self.irr_box.get()),\
+                                                        float(self.curr_lim_box.get()),\
+                                                        save_params,\
+                                                        float(self.timeout_box.get())\
+                    )
+                    
+                    # Receive the data and set it as an object variable.
+                    self.dict_data = test_output
+                    
+                    print("Data collected.")
 
-                # This is sent to the plot() function to be the label for that line, and will appear in the legend.
-                repetition = "Scan " + str(i+1)
+                    # This is sent to the plot() function to be the label for that line, and will appear in the legend.
+                    repetition = "Scan " + str(i+1)
 
 
-                #temp_df = pd.DataFrame.from_dict(self.dict_data)
+                    #temp_df = pd.DataFrame.from_dict(self.dict_data)
 
-                plottingdict = {'Potential (V)': self.dict_data['Potential (V)'],'Current Density (mA/cm2)':self.dict_data['Current Density (mA/cm2)']}
-                temp_df = pd.DataFrame.from_dict(plottingdict)   
-                print("DataFrame obtained for scan. Plotting...")
-                print(temp_df)
-                
-                # Calls the plot function to plot it immediately.
-                self.plot(temp_df,self.canvas,repetition,i,self.pattern_box.get()[i])
+                    plottingdict = {'Potential (V)': self.dict_data['Potential (V)'],'Current Density (mA/cm2)':self.dict_data['Current Density (mA/cm2)']}
+                    temp_df = pd.DataFrame.from_dict(plottingdict)   
+                    print("DataFrame obtained for scan. Plotting...")
+                    print(temp_df)
+                    
+                    # Calls the plot function to plot it immediately.
+                    self.plot(temp_df,self.canvas,repetition,i,self.pattern_box.get()[i])
 
-                print("Plotting complete for current scan.")
+                    print("Plotting complete for current scan.")
 
-                # Calls function to display the output parameters in the log
-                #self.display_log(test_output, self.out_txt, i)
-                
-                # This is if the user wants a pause between multiple scans. Default value is set to 0.
-                
-                
-                # UPDATE 2022-02-15: Check if already on last scan. If on last scan, then no need to sleep.
-                if i == len(str(self.pattern_box.get())) - 1:
-                    print("Experiment completed.")
-                else:
-                    print("Sleeping for " + self.multidelay_box + " seconds. Program will not respond in this state.")
-                    sleep(float(self.multidelay_box.get()))
-                    print("Sleep done.")
+                    # Calls function to display the output parameters in the log
+                    #self.display_log(test_output, self.out_txt, i)
+                    
+                    # This is if the user wants a pause between multiple scans. Default value is set to 0.
+                    
+                    
+                    # UPDATE 2022-02-15: Check if already on last scan. If on last scan, then no need to sleep.
+                    if i == len(str(self.pattern_box.get())) - 1:
+                        print("Experiment completed.")
+                    else:
+                        print("Sleeping for " + self.multidelay_box + " seconds. Program will not respond in this state.")
+                        sleep(float(self.multidelay_box.get()))
+                        print("Sleep done.")
 
 
         else:
