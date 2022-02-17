@@ -124,6 +124,8 @@ class Application(tk.Tk):
         self.type_option_4.grid(row = 4, column = 1, sticky = 'w')
         self.type_option_5 = tk.Radiobutton (self.frame_in_par, text = 'Carbon large', variable = self.celltype, value = 'Carbon large',tristatevalue='x')
         self.type_option_5.grid(row = 5, sticky = 'w')
+        self.type_option_6 = tk.Radiobutton (self.frame_in_par, text = 'New Materials', variable = self.celltype, value = 'New Materials',tristatevalue='x')
+        self.type_option_6.grid(row = 5, column = 1, sticky = 'w')
 
         self.celltype.trace('w',self.showCellType)
 
@@ -172,22 +174,24 @@ class Application(tk.Tk):
         # Scan direction
         self.scan_dir_select = tk.Label (self.frame_in_par, text = 'Scan direction/ Pattern:' )
         self.scan_dir_select.grid(row = 16, sticky = 'w')
-        self.scan_dir = tk.StringVar()
+        self.scan_dir = tk.StringVar(None, 'r')
+
         self.scan_dir_option_1 = tk.Radiobutton (self.frame_in_par, text = 'Forward', variable = self.scan_dir, value = 'f',tristatevalue='x', command = self.disable_pattern_box)
         self.scan_dir_option_1.grid(row = 17, sticky = 'w')
+
         self.scan_dir_option_2 = tk.Radiobutton (self.frame_in_par, text = 'Reverse', variable = self.scan_dir, value = 'r',tristatevalue='x', command = self.disable_pattern_box)
         self.scan_dir_option_2.grid(row = 18, sticky = 'w')
 
         self.scan_dir_option_3 = tk.Radiobutton (self.frame_in_par, text = 'Hysteresis (F->R)', variable = self.scan_dir, value = 'fr',tristatevalue='x', command = self.disable_pattern_box)
         self.scan_dir_option_3.grid(row = 19, sticky = 'w')
 
-
         self.scan_dir_option_4 = tk.Radiobutton (self.frame_in_par, text = 'Hysteresis (R->F)', variable = self.scan_dir, value = 'rf',tristatevalue='x', command = self.disable_pattern_box)
         self.scan_dir_option_4.grid(row = 20, sticky = 'w')
 
         self.scan_dir_option_5 = tk.Radiobutton (self.frame_in_par, text = 'Pattern', variable = self.scan_dir, value = 'p',tristatevalue='x', command = self.enable_pattern_box)
         self.scan_dir_option_5.grid(row = 21, sticky = 'w')
-        self.pattern_entry = tk.StringVar(self,"Enter Direction Here.")
+
+        self.pattern_entry = tk.StringVar(self,"r")
 
         # Trace keeps track of the radio button selected. Try this out and check the logs.
         self.scan_dir.trace('w',self.configure_pattern)
@@ -195,10 +199,8 @@ class Application(tk.Tk):
 
 
         self.pattern_box = tk.Entry (self.frame_in_par, textvariable = self.pattern_entry)
-        if self.pattern_entry.get() == 'f' or self.pattern_entry.get() == 'r' or self.pattern_entry.get() == 'fr' or self.pattern_entry.get() == 'rf':
-            self.pattern_box.config(state = 'disabled')
         self.pattern_box.grid (row = 21, column = 1, sticky = 'w')
-
+        self.pattern_box.configure(state = 'disabled')
 
         # Cell Area
         self.cell_area_label = tk.Label (self.frame_in_par, text = 'Cell Area (sq. cm):')
@@ -285,9 +287,9 @@ class Application(tk.Tk):
 
         # selected_resc will change when an option in the OptionMenu is clicked. This click is tracked by the trace function below.
         self.selected_resc = tk.StringVar()
-        self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.address_list)
-        #random = [1,2,3]
-        #self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.random)
+        #self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.address_list)
+        self.random = [1,2,3]
+        self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.random)
         self.address_drop.grid(row = 0, column = 1, sticky = 'w')
         
         self.selected_resc.trace('w',self.selectResource)  
@@ -722,6 +724,7 @@ class Application(tk.Tk):
             textbox.insert('end', f"    PCE: {np.round(output_params['PCE (%)'], 2)}%\n")
             textbox.insert('end', f"    Rseries: {np.round(output_params['Rseries (ohm)'], 2)} ohm\n")
             textbox.insert('end', f"    Rshunt: {np.round(output_params['Rshunt (ohm)'], 2)} ohm\n")
+            textbox.insert('end', f"    Hysteresis Index: {np.round(output_params['Hysteresis Index (%)'], 2)} %\n")
             textbox.insert('end', f"    Direction: {direction}\n")
             textbox.insert('end', "\n")
             textbox.insert('end', "\n")
@@ -733,12 +736,12 @@ class Application(tk.Tk):
 
     def enable_pattern_box(self):
         self.pattern_box.configure(state="normal")
+        self.pattern_entry.set("Enter pattern here")
         self.pattern_box.update()
 
 
 
                 
-
 
         
 
