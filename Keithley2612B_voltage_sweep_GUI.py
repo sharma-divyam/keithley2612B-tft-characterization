@@ -287,9 +287,11 @@ class Application(tk.Tk):
 
         # selected_resc will change when an option in the OptionMenu is clicked. This click is tracked by the trace function below.
         self.selected_resc = tk.StringVar()
-        #self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.address_list)
-        self.random = [1,2,3]
-        self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.random)
+        self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.address_list)
+        #To run the GUI when no devices are connected, comment out the line above and enable the two lines below. 
+        #self.random = [1,2,3]
+        #self.address_drop = tk.OptionMenu (self.frame_ic, self.selected_resc, *self.random)
+
         self.address_drop.grid(row = 0, column = 1, sticky = 'w')
         
         self.selected_resc.trace('w',self.selectResource)  
