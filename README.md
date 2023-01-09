@@ -4,7 +4,7 @@ Python script for analyzing readings from Keithley 2612B for Solar Cell and TFT 
 ## Setup Instructions
 1. Clone the project.
    ```sh
-   git clone https://github.com/sharma-divyam/keithley2612B-solar-and-TFT-characterization.git
+   git clone https://github.com/sharma-divyam/solar-cell-characterization-keithley.git
    ```
 2. Install the dependencies required in the project.
    ```sh
